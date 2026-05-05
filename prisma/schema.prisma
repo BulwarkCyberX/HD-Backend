@@ -1,0 +1,401 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CLIENT
+  PROVIDER
+  ADMIN
+}
+
+enum EntityType {
+  INDIVIDUAL
+  COMPANY
+  GOVERNMENT
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum BudgetType {
+  FIXED
+  HOURLY
+  MILESTONE
+}
+
+enum ProjectVisibility {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum ReportSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReportStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  NEED_MORE_INFO
+  VALID
+  REJECTED
+}
+
+enum PaymentCurrency {
+  INR
+  USD
+}
+
+enum PaymentStatus {
+  PENDING
+  IN_ESCROW
+  RELEASED
+  REFUNDED
+}
+
+enum BugBountyProgramStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum BugReportStatus {
+  SUBMITTED
+  VALID
+  REJECTED
+  DUPLICATE
+}
+
+enum NotificationType {
+  NEW_BID
+  BID_ACCEPTED
+  REPORT_SUBMITTED
+  REPORT_VALIDATED
+  PAYMENT_RELEASED
+  BUG_BOUNTY_REPORT_SUBMITTED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(CLIENT)
+
+  entityId  String?
+  entity    Entity?  @relation(fields: [entityId], references: [id], onDelete: SetNull)
+
+  providerProfile ProviderProfile?
+  clientProfile   ClientProfile?
+
+  projects Project[] @relation("UserProjects")
+  bids     Bid[]     @relation("ProviderBids")
+  selectedProjects Project[] @relation("SelectedProviderProjects")
+  messages Message[]
+  reports  Report[]
+  triagedReports Report[] @relation("ReportValidatedBy")
+  reviewsGiven   Review[] @relation("ReviewClient")
+  reviewsReceived Review[] @relation("ReviewProvider")
+  paymentsMade     Payment[] @relation("PaymentPayer")
+  paymentsReceived Payment[] @relation("PaymentPayee")
+
+  bugBountyPrograms   BugBountyProgram[]
+  bugReportsSubmitted BugReport[]       @relation("BugReportResearcher")
+  notifications       Notification[]
+  fileAssets          FileAsset[]
+  vdpPrograms         VdpProgram[]
+
+  createdAt DateTime @default(now())
+}
+
+model Entity {
+  id                 String             @id @default(cuid())
+  type               EntityType
+  name               String
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+
+  users User[]
+
+  createdAt DateTime @default(now())
+}
+
+model ProviderProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  skills          String[] @default([])
+  certifications  String[] @default([])
+  rating          Float    @default(0)
+  totalReviews    Int      @default(0)
+  completedProjects Int    @default(0)
+  validReportCount Int     @default(0)
+  reputationScore Float    @default(0)
+  bidCredits      Int      @default(5)
+
+  createdAt       DateTime @default(now())
+}
+
+model ClientProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companySize String?
+
+  createdAt   DateTime @default(now())
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  assets      Json
+  inScope     String[]      @default([])
+  outOfScope  String[]      @default([])
+  testingWindow String
+  budgetType  BudgetType
+  budgetAmount Float
+  timeline    String
+  visibility  ProjectVisibility @default(PUBLIC)
+
+  clientId    String
+  client      User          @relation("UserProjects", fields: [clientId], references: [id], onDelete: Restrict)
+  bids        Bid[]
+  selectedProviderId String?
+  selectedProvider User? @relation("SelectedProviderProjects", fields: [selectedProviderId], references: [id], onDelete: SetNull)
+  messages Message[]
+  reports  Report[]
+  review   Review?
+  payment  Payment?
+  files    FileAsset[]
+
+  status      ProjectStatus @default(DRAFT)
+
+  createdAt   DateTime      @default(now())
+
+  @@index([clientId])
+  @@index([selectedProviderId])
+  @@index([status])
+}
+
+model Bid {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  providerId String
+  provider   User      @relation("ProviderBids", fields: [providerId], references: [id], onDelete: Cascade)
+  proposal   String
+  price      Float
+  timeline   String
+  status     BidStatus @default(PENDING)
+  createdAt  DateTime  @default(now())
+
+  @@index([projectId])
+  @@index([providerId])
+  @@index([status])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  message   String
+  createdAt DateTime @default(now())
+  files     FileAsset[]
+
+  @@index([projectId])
+  @@index([senderId])
+}
+
+model Report {
+  id          String         @id @default(cuid())
+  projectId   String
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  submittedBy String
+  submitter   User           @relation(fields: [submittedBy], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  severity    ReportSeverity
+  status      ReportStatus   @default(SUBMITTED)
+  triageNotes String?
+  validatedBy String?
+  validator   User?          @relation("ReportValidatedBy", fields: [validatedBy], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+  files       FileAsset[]
+
+  @@index([projectId])
+  @@index([submittedBy])
+  @@index([severity])
+  @@index([status])
+  @@index([validatedBy])
+}
+
+model Payment {
+  id        String          @id @default(cuid())
+  projectId String          @unique
+  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payerId   String
+  payer     User            @relation("PaymentPayer", fields: [payerId], references: [id], onDelete: Restrict)
+  payeeId   String
+  payee     User            @relation("PaymentPayee", fields: [payeeId], references: [id], onDelete: Restrict)
+  amount    Float
+  currency  PaymentCurrency @default(INR)
+  status    PaymentStatus   @default(PENDING)
+  createdAt DateTime        @default(now())
+
+  @@index([payerId])
+  @@index([payeeId])
+  @@index([status])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  projectId  String   @unique
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId   String
+  client     User     @relation("ReviewClient", fields: [clientId], references: [id], onDelete: Restrict)
+  providerId String
+  provider   User     @relation("ReviewProvider", fields: [providerId], references: [id], onDelete: Restrict)
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@index([clientId])
+  @@index([providerId])
+}
+
+model BugBountyProgram {
+  id                   String                 @id @default(cuid())
+  clientId             String
+  client               User                   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title                String
+  description          String                 @default("")
+  scope                Json
+  rewardTable          Json
+  status               BugBountyProgramStatus @default(DRAFT)
+  allowedResearcherIds String[]               @default([])
+  createdAt            DateTime               @default(now())
+  bugReports           BugReport[]
+
+  @@index([clientId])
+  @@index([status])
+}
+
+model BugReport {
+  id           String          @id @default(cuid())
+  programId    String
+  program      BugBountyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  researcherId String
+  researcher   User            @relation("BugReportResearcher", fields: [researcherId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  severity     ReportSeverity
+  status       BugReportStatus @default(SUBMITTED)
+  createdAt    DateTime        @default(now())
+  files        FileAsset[]
+
+  @@index([programId])
+  @@index([researcherId])
+  @@index([status])
+}
+
+model VdpProgram {
+  id        String          @id @default(cuid())
+  clientId  String
+  client    User            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title     String
+  scope     Json
+  policy    String
+  createdAt DateTime        @default(now())
+  submissions VdpSubmission[]
+
+  @@index([clientId])
+}
+
+model VdpSubmission {
+  id           String           @id @default(cuid())
+  vdpId        String
+  vdp          VdpProgram       @relation(fields: [vdpId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  contactEmail String?
+  severity     ReportSeverity?
+  createdAt    DateTime         @default(now())
+  files        FileAsset[]
+
+  @@index([vdpId])
+}
+
+model FileAsset {
+  id           String   @id @default(cuid())
+  storageKey   String
+  originalName String
+  mimeType     String
+  size         Int
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  projectId    String?
+  project      Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  workspaceReportId String?
+  workspaceReport   Report? @relation(fields: [workspaceReportId], references: [id], onDelete: SetNull)
+
+  bugReportId String?
+  bugReport   BugReport? @relation(fields: [bugReportId], references: [id], onDelete: SetNull)
+
+  messageId String?
+  message   Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  vdpSubmissionId String?
+  vdpSubmission   VdpSubmission? @relation(fields: [vdpSubmissionId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([uploadedById])
+  @@index([projectId])
+  @@index([workspaceReportId])
+  @@index([bugReportId])
+  @@index([messageId])
+  @@index([vdpSubmissionId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([userId, read])
+}

@@ -1,0 +1,4 @@
+
+> @hackersdeal/api@0.0.0 lint
+> eslint "src/**/*.ts" --max-warnings 0
+

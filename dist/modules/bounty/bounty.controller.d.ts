@@ -1,0 +1,105 @@
+import { type RequestUser } from '../../auth/current-user.decorator';
+import { BountyService } from './bounty.service';
+import { CreateProgramDto } from './dto/create-program.dto';
+import { CreateBugReportDto } from './dto/create-bug-report.dto';
+import { UpdateBugReportStatusDto } from './dto/update-bug-report-status.dto';
+export declare class BountyController {
+    private readonly bounty;
+    constructor(bounty: BountyService);
+    createProgram(user: RequestUser, dto: CreateProgramDto): Promise<{
+        id: string;
+        createdAt: Date;
+        title: string;
+        description: string;
+        status: import(".prisma/client").$Enums.BugBountyProgramStatus;
+        clientId: string;
+        scope: import("@prisma/client/runtime/library").JsonValue;
+        rewardTable: import("@prisma/client/runtime/library").JsonValue;
+        allowedResearcherIds: string[];
+    }>;
+    listPrograms(user: RequestUser): Promise<{
+        id: string;
+        createdAt: Date;
+        title: string;
+        description: string;
+        status: import(".prisma/client").$Enums.BugBountyProgramStatus;
+        clientId: string;
+        scope: import("@prisma/client/runtime/library").JsonValue;
+        rewardTable: import("@prisma/client/runtime/library").JsonValue;
+        allowedResearcherIds: string[];
+    }[]>;
+    getProgram(user: RequestUser, id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        title: string;
+        description: string;
+        status: import(".prisma/client").$Enums.BugBountyProgramStatus;
+        clientId: string;
+        scope: import("@prisma/client/runtime/library").JsonValue;
+        rewardTable: import("@prisma/client/runtime/library").JsonValue;
+        allowedResearcherIds: string[];
+    }>;
+    submitReport(user: RequestUser, dto: CreateBugReportDto): Promise<{
+        id: string;
+        createdAt: Date;
+        title: string;
+        description: string;
+        status: import(".prisma/client").$Enums.BugReportStatus;
+        files: {
+            id: string;
+            createdAt: Date;
+            originalName: string;
+            mimeType: string;
+            size: number;
+        }[];
+        severity: import(".prisma/client").$Enums.ReportSeverity;
+        researcher: {
+            id: string;
+            email: string;
+        };
+        programId: string;
+        researcherId: string;
+    }>;
+    listReports(user: RequestUser, programId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        title: string;
+        description: string;
+        status: import(".prisma/client").$Enums.BugReportStatus;
+        files: {
+            id: string;
+            createdAt: Date;
+            originalName: string;
+            mimeType: string;
+            size: number;
+        }[];
+        severity: import(".prisma/client").$Enums.ReportSeverity;
+        researcher: {
+            id: string;
+            email: string;
+        };
+        programId: string;
+        researcherId: string;
+    }[]>;
+    updateReportStatus(user: RequestUser, id: string, dto: UpdateBugReportStatusDto): Promise<{
+        id: string;
+        createdAt: Date;
+        title: string;
+        description: string;
+        status: import(".prisma/client").$Enums.BugReportStatus;
+        files: {
+            id: string;
+            createdAt: Date;
+            originalName: string;
+            mimeType: string;
+            size: number;
+        }[];
+        severity: import(".prisma/client").$Enums.ReportSeverity;
+        researcher: {
+            id: string;
+            email: string;
+        };
+        programId: string;
+        researcherId: string;
+    }>;
+}
