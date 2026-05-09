@@ -8,6 +8,10 @@ export declare class BidsController {
     create(user: RequestUser, dto: CreateBidDto): Promise<{
         id: string;
         createdAt: Date;
+        timeline: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        projectId: string;
+        providerId: string;
         provider: {
             providerProfile: {
                 rating: number;
@@ -20,16 +24,16 @@ export declare class BidsController {
             id: string;
             email: string;
         };
-        timeline: string;
-        status: import(".prisma/client").$Enums.BidStatus;
-        projectId: string;
-        providerId: string;
         proposal: string;
         price: number;
     }>;
     listForProject(user: RequestUser, projectId: string): Promise<{
         id: string;
         createdAt: Date;
+        timeline: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        projectId: string;
+        providerId: string;
         provider: {
             providerProfile: {
                 rating: number;
@@ -42,10 +46,6 @@ export declare class BidsController {
             id: string;
             email: string;
         };
-        timeline: string;
-        status: import(".prisma/client").$Enums.BidStatus;
-        projectId: string;
-        providerId: string;
         proposal: string;
         price: number;
     }[]>;
@@ -58,6 +58,10 @@ export declare class BidsController {
         };
         id: string;
         createdAt: Date;
+        timeline: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        projectId: string;
+        providerId: string;
         provider: {
             providerProfile: {
                 rating: number;
@@ -70,16 +74,16 @@ export declare class BidsController {
             id: string;
             email: string;
         };
-        timeline: string;
-        status: import(".prisma/client").$Enums.BidStatus;
-        projectId: string;
-        providerId: string;
         proposal: string;
         price: number;
     }[]>;
     updateStatus(user: RequestUser, id: string, dto: UpdateBidStatusDto): Promise<{
         id: string;
         createdAt: Date;
+        timeline: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        projectId: string;
+        providerId: string;
         provider: {
             providerProfile: {
                 rating: number;
@@ -92,10 +96,6 @@ export declare class BidsController {
             id: string;
             email: string;
         };
-        timeline: string;
-        status: import(".prisma/client").$Enums.BidStatus;
-        projectId: string;
-        providerId: string;
         proposal: string;
         price: number;
     }>;

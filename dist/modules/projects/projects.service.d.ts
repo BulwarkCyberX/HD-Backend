@@ -1,8 +1,10 @@
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserRole, type BudgetType, type ProjectVisibility } from '@prisma/client';
+import { TransactionalEmailService } from '../email/transactional-email.service';
 export declare class ProjectsService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly transactional;
+    constructor(prisma: PrismaService, transactional: TransactionalEmailService);
     private readonly projectSelect;
     create(input: {
         userId: string;

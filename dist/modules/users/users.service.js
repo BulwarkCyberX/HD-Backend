@@ -26,6 +26,7 @@ let UsersService = class UsersService {
                 role: true,
                 entityId: true,
                 createdAt: true,
+                emailVerifiedAt: true,
                 entity: { select: { id: true, type: true, name: true, verificationStatus: true, createdAt: true } },
                 providerProfile: true,
                 clientProfile: true,
@@ -33,7 +34,8 @@ let UsersService = class UsersService {
         });
         if (!user)
             throw new common_1.NotFoundException('User not found');
-        return user;
+        const { emailVerifiedAt, ...rest } = user;
+        return { ...rest, emailVerified: !!emailVerifiedAt };
     }
     async getById(requester, id) {
         if (requester.role !== client_1.UserRole.ADMIN && requester.userId !== id) {

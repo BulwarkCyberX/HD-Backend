@@ -19,11 +19,11 @@ export declare class BountyService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        scope: import("@prisma/client/runtime/library").JsonValue;
         title: string;
         description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
+        scope: import("@prisma/client/runtime/library").JsonValue;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
         allowedResearcherIds: string[];
     }>;
@@ -33,11 +33,11 @@ export declare class BountyService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        scope: import("@prisma/client/runtime/library").JsonValue;
         title: string;
         description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
+        scope: import("@prisma/client/runtime/library").JsonValue;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
         allowedResearcherIds: string[];
     }[]>;
@@ -48,11 +48,11 @@ export declare class BountyService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        scope: import("@prisma/client/runtime/library").JsonValue;
         title: string;
         description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
+        scope: import("@prisma/client/runtime/library").JsonValue;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
         allowedResearcherIds: string[];
     }>;

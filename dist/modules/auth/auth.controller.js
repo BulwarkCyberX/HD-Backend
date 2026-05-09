@@ -20,12 +20,32 @@ const register_dto_1 = require("./dto/register.dto");
 const login_dto_1 = require("./dto/login.dto");
 const request_login_code_dto_1 = require("./dto/request-login-code.dto");
 const verify_login_code_dto_1 = require("./dto/verify-login-code.dto");
+const verify_email_otp_dto_1 = require("./dto/verify-email-otp.dto");
+const verify_email_token_dto_1 = require("./dto/verify-email-token.dto");
+const resend_verification_dto_1 = require("./dto/resend-verification.dto");
+const forgot_password_dto_1 = require("./dto/forgot-password.dto");
+const reset_password_dto_1 = require("./dto/reset-password.dto");
 let AuthController = class AuthController {
     constructor(auth) {
         this.auth = auth;
     }
     register(dto) {
         return this.auth.register(dto);
+    }
+    verifyEmailOtp(dto) {
+        return this.auth.verifyEmail({ email: dto.email, code: dto.code });
+    }
+    verifyEmailToken(dto) {
+        return this.auth.verifyEmail({ token: dto.token });
+    }
+    resendVerification(dto) {
+        return this.auth.resendVerification(dto.email);
+    }
+    forgotPassword(dto) {
+        return this.auth.forgotPassword(dto.email);
+    }
+    resetPassword(dto) {
+        return this.auth.resetPassword({ token: dto.token, password: dto.password });
     }
     checkEmail(email) {
         return this.auth.checkEmailAvailability(email);
@@ -93,6 +113,46 @@ __decorate([
     __metadata("design:paramtypes", [register_dto_1.RegisterDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "register", null);
+__decorate([
+    (0, common_1.Post)('verify-email/otp'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [verify_email_otp_dto_1.VerifyEmailOtpDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "verifyEmailOtp", null);
+__decorate([
+    (0, common_1.Post)('verify-email/token'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [verify_email_token_dto_1.VerifyEmailTokenDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "verifyEmailToken", null);
+__decorate([
+    (0, common_1.Post)('resend-verification'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [resend_verification_dto_1.ResendVerificationDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "resendVerification", null);
+__decorate([
+    (0, common_1.Post)('forgot-password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [forgot_password_dto_1.ForgotPasswordDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, common_1.Post)('reset-password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_password_dto_1.ResetPasswordDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "resetPassword", null);
 __decorate([
     (0, common_1.Get)('check-email'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),

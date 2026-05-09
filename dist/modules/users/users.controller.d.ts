@@ -4,10 +4,11 @@ export declare class UsersController {
     private readonly users;
     constructor(users: UsersService);
     me(user: RequestUser): Promise<{
+        emailVerified: boolean;
         entity: {
-            name: string;
             id: string;
             createdAt: Date;
+            name: string;
             type: import(".prisma/client").$Enums.EntityType;
             verificationStatus: import(".prisma/client").$Enums.VerificationStatus;
         } | null;
@@ -51,9 +52,9 @@ export declare class UsersController {
     }>;
     byId(requester: RequestUser, id: string): Promise<{
         entity: {
-            name: string;
             id: string;
             createdAt: Date;
+            name: string;
             type: import(".prisma/client").$Enums.EntityType;
             verificationStatus: import(".prisma/client").$Enums.VerificationStatus;
         } | null;

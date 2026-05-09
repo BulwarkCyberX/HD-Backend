@@ -15,13 +15,15 @@ export class UsersService {
         role: true,
         entityId: true,
         createdAt: true,
+        emailVerifiedAt: true,
         entity: { select: { id: true, type: true, name: true, verificationStatus: true, createdAt: true } },
         providerProfile: true,
         clientProfile: true,
       },
     });
     if (!user) throw new NotFoundException('User not found');
-    return user;
+    const { emailVerifiedAt, ...rest } = user;
+    return { ...rest, emailVerified: !!emailVerifiedAt };
   }
 
   async getById(requester: { userId: string; role: UserRole }, id: string) {

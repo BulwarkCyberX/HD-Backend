@@ -8,9 +8,11 @@ import { JwtStrategy } from './jwt.strategy';
 import { RolesGuard } from '../../auth/roles.guard';
 import type { JwtSignOptions } from '@nestjs/jwt';
 import { oauthStrategyProviders } from './oauth-strategies.providers';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
+    EmailModule,
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],

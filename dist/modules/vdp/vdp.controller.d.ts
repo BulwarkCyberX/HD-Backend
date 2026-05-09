@@ -8,16 +8,16 @@ export declare class VdpController {
     create(user: RequestUser, dto: CreateVdpDto): Promise<{
         id: string;
         createdAt: Date;
-        scope: import("@prisma/client/runtime/library").JsonValue;
         title: string;
         clientId: string;
+        scope: import("@prisma/client/runtime/library").JsonValue;
         policy: string;
     }>;
     getById(id: string): Promise<{
         id: string;
         createdAt: Date;
-        scope: import("@prisma/client/runtime/library").JsonValue;
         title: string;
+        scope: import("@prisma/client/runtime/library").JsonValue;
         policy: string;
     }>;
     submitReport(dto: VdpReportDto): Promise<{

@@ -87,11 +87,13 @@ Environment:
 
 - `FILE_UPLOAD_DIR` — optional directory for local uploads (defaults to `./uploads`)
 - `PUBLIC_API_URL` — optional absolute API origin used in generated file URLs (defaults to first `WEB_ORIGIN` or `http://localhost:4000`)
-- SendGrid (optional, email for notification events):
-  - `SENDGRID_ENABLED` — set to `"true"` to enable email sending (or provide `SENDGRID_API_KEY`)
-  - `SENDGRID_API_KEY` — SendGrid API key
-  - `SENDGRID_FROM_EMAIL` — sender email address (required when sending)
-  - `SENDGRID_FROM_NAME` — optional sender name
+- **Mail (notifications, login OTP, etc.)** — one stack, env-driven:
+  - `MAIL_PROVIDER` — `auto` (default), `smtp`, or `sendgrid`. `auto` uses Gmail SMTP if `GMAIL_SMTP_USER` + `GMAIL_SMTP_APP_PASSWORD` are set, otherwise SendGrid if `SENDGRID_API_KEY` is set.
+  - `MAIL_FROM_ADDRESS` — From address (e.g. `hdteam@yourdomain.com`). Falls back to `SENDGRID_FROM_EMAIL` if unset.
+  - `MAIL_REPLY_TO` — Reply-To (defaults to same as From).
+  - `MAIL_FROM_NAME` — Display name (e.g. `HD Team`). Falls back to `SENDGRID_FROM_NAME`.
+  - **Gmail SMTP:** `GMAIL_SMTP_USER`, `GMAIL_SMTP_APP_PASSWORD`, optional `GMAIL_SMTP_HOST` (default `smtp.gmail.com`), `GMAIL_SMTP_PORT` (default `587`).
+  - **SendGrid (optional):** `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`, `SENDGRID_ENABLED`
 
 Validation:
 

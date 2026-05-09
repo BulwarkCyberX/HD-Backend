@@ -1,10 +1,14 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProjectStatus, ReportStatus, UserRole, type BudgetType, type ProjectVisibility } from '@prisma/client';
+import { TransactionalEmailService } from '../email/transactional-email.service';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactional: TransactionalEmailService,
+  ) {}
 
   private readonly projectSelect = {
     id: true,
@@ -76,7 +80,7 @@ export class ProjectsService {
       throw new ForbiddenException('Only clients can create projects');
     }
 
-    return await this.prisma.project.create({
+    const created = await this.prisma.project.create({
       data: {
         title: input.title,
         description: input.description,
@@ -93,6 +97,23 @@ export class ProjectsService {
       },
       select: this.projectSelect,
     });
+
+    const client = await this.prisma.user.findUnique({
+      where: { id: input.userId },
+      select: { email: true, firstName: true },
+    });
+    if (client?.email) {
+      void this.transactional
+        .sendProjectCreated({
+          to: client.email,
+          clientName: client.firstName ?? '',
+          projectTitle: created.title,
+          projectId: created.id,
+        })
+        .catch(() => undefined);
+    }
+
+    return created;
   }
 
   async listAll() {

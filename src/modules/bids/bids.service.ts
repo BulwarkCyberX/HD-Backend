@@ -2,12 +2,14 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { BidStatus, NotificationType, ProjectStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TransactionalEmailService } from '../email/transactional-email.service';
 
 @Injectable()
 export class BidsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly transactional: TransactionalEmailService,
   ) {}
 
   private readonly bidSelect = {
@@ -85,6 +87,21 @@ export class BidsService {
       type: NotificationType.NEW_BID,
       message: `New bid on project "${project.title}"`,
     });
+
+    const providerUser = await this.prisma.user.findUnique({
+      where: { id: input.providerId },
+      select: { email: true, firstName: true },
+    });
+    if (providerUser?.email) {
+      void this.transactional
+        .sendBidPlacedProviderConfirmation({
+          to: providerUser.email,
+          providerName: providerUser.firstName ?? '',
+          projectTitle: project.title,
+          amount: input.price,
+        })
+        .catch(() => undefined);
+    }
 
     return result;
   }

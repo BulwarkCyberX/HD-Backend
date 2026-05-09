@@ -4,10 +4,11 @@ export declare class UsersService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     getMe(userId: string): Promise<{
+        emailVerified: boolean;
         entity: {
-            name: string;
             id: string;
             createdAt: Date;
+            name: string;
             type: import(".prisma/client").$Enums.EntityType;
             verificationStatus: import(".prisma/client").$Enums.VerificationStatus;
         } | null;
@@ -41,9 +42,9 @@ export declare class UsersService {
         role: UserRole;
     }, id: string): Promise<{
         entity: {
-            name: string;
             id: string;
             createdAt: Date;
+            name: string;
             type: import(".prisma/client").$Enums.EntityType;
             verificationStatus: import(".prisma/client").$Enums.VerificationStatus;
         } | null;

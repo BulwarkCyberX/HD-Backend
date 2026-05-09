@@ -13,9 +13,11 @@ exports.ProjectsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const client_1 = require("@prisma/client");
+const transactional_email_service_1 = require("../email/transactional-email.service");
 let ProjectsService = class ProjectsService {
-    constructor(prisma) {
+    constructor(prisma, transactional) {
         this.prisma = prisma;
+        this.transactional = transactional;
         this.projectSelect = {
             id: true,
             title: true,
@@ -72,7 +74,7 @@ let ProjectsService = class ProjectsService {
         if (input.role !== client_1.UserRole.CLIENT) {
             throw new common_1.ForbiddenException('Only clients can create projects');
         }
-        return await this.prisma.project.create({
+        const created = await this.prisma.project.create({
             data: {
                 title: input.title,
                 description: input.description,
@@ -89,6 +91,21 @@ let ProjectsService = class ProjectsService {
             },
             select: this.projectSelect,
         });
+        const client = await this.prisma.user.findUnique({
+            where: { id: input.userId },
+            select: { email: true, firstName: true },
+        });
+        if (client?.email) {
+            void this.transactional
+                .sendProjectCreated({
+                to: client.email,
+                clientName: client.firstName ?? '',
+                projectTitle: created.title,
+                projectId: created.id,
+            })
+                .catch(() => undefined);
+        }
+        return created;
     }
     async listAll() {
         return await this.prisma.project.findMany({
@@ -134,6 +151,7 @@ let ProjectsService = class ProjectsService {
 exports.ProjectsService = ProjectsService;
 exports.ProjectsService = ProjectsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        transactional_email_service_1.TransactionalEmailService])
 ], ProjectsService);
 //# sourceMappingURL=projects.service.js.map

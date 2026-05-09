@@ -4,24 +4,32 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RequestLoginCodeDto } from './dto/request-login-code.dto';
 import { VerifyLoginCodeDto } from './dto/verify-login-code.dto';
+import { VerifyEmailOtpDto } from './dto/verify-email-otp.dto';
+import { VerifyEmailTokenDto } from './dto/verify-email-token.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 export declare class AuthController {
     private readonly auth;
     constructor(auth: AuthService);
     register(dto: RegisterDto): Promise<{
-        user: {
-            id: string;
-            email: string;
-            role: import(".prisma/client").$Enums.UserRole;
-            firstName: string | null;
-            lastName: string | null;
-            country: string | null;
-            city: string | null;
-            state: string | null;
-            postalCode: string | null;
-            entityId: string | null;
-            createdAt: Date;
-        };
-        accessToken: string;
+        needsEmailVerification: true;
+        email: string;
+    }>;
+    verifyEmailOtp(dto: VerifyEmailOtpDto): Promise<{
+        verified: true;
+    }>;
+    verifyEmailToken(dto: VerifyEmailTokenDto): Promise<{
+        verified: true;
+    }>;
+    resendVerification(dto: ResendVerificationDto): Promise<{
+        ok: true;
+    }>;
+    forgotPassword(dto: ForgotPasswordDto): Promise<{
+        ok: true;
+    }>;
+    resetPassword(dto: ResetPasswordDto): Promise<{
+        ok: true;
     }>;
     checkEmail(email: string): Promise<{
         available: boolean;

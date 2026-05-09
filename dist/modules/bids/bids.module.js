@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const bids_controller_1 = require("./bids.controller");
 const bids_service_1 = require("./bids.service");
 const notifications_module_1 = require("../notifications/notifications.module");
+const email_module_1 = require("../email/email.module");
 let BidsModule = class BidsModule {
 };
 exports.BidsModule = BidsModule;
 exports.BidsModule = BidsModule = __decorate([
     (0, common_1.Module)({
-        imports: [notifications_module_1.NotificationsModule],
+        imports: [notifications_module_1.NotificationsModule, email_module_1.EmailModule],
         controllers: [bids_controller_1.BidsController],
         providers: [bids_service_1.BidsService],
     })

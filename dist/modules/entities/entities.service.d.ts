@@ -8,9 +8,9 @@ export declare class EntitiesService {
         type: EntityType;
         name: string;
     }): Promise<{
-        name: string;
         id: string;
         createdAt: Date;
+        name: string;
         type: import(".prisma/client").$Enums.EntityType;
         verificationStatus: import(".prisma/client").$Enums.VerificationStatus;
     }>;

@@ -14,10 +14,12 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
+const transactional_email_service_1 = require("../email/transactional-email.service");
 let BidsService = class BidsService {
-    constructor(prisma, notifications) {
+    constructor(prisma, notifications, transactional) {
         this.prisma = prisma;
         this.notifications = notifications;
+        this.transactional = transactional;
         this.bidSelect = {
             id: true,
             projectId: true,
@@ -85,6 +87,20 @@ let BidsService = class BidsService {
             type: client_1.NotificationType.NEW_BID,
             message: `New bid on project "${project.title}"`,
         });
+        const providerUser = await this.prisma.user.findUnique({
+            where: { id: input.providerId },
+            select: { email: true, firstName: true },
+        });
+        if (providerUser?.email) {
+            void this.transactional
+                .sendBidPlacedProviderConfirmation({
+                to: providerUser.email,
+                providerName: providerUser.firstName ?? '',
+                projectTitle: project.title,
+                amount: input.price,
+            })
+                .catch(() => undefined);
+        }
         return result;
     }
     async listForProject(input) {
@@ -178,6 +194,7 @@ exports.BidsService = BidsService;
 exports.BidsService = BidsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        notifications_service_1.NotificationsService])
+        notifications_service_1.NotificationsService,
+        transactional_email_service_1.TransactionalEmailService])
 ], BidsService);
 //# sourceMappingURL=bids.service.js.map

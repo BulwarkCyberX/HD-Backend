@@ -1,17 +1,15 @@
-import { ConfigService } from '@nestjs/config';
 import { NotificationType } from '@prisma/client';
+import { AppMailService } from './app-mail.service';
+import { TransactionalEmailService } from './transactional-email.service';
 type SendNotificationEmailInput = {
     toEmail: string;
     type: NotificationType;
     message: string;
 };
 export declare class NotificationEmailService {
-    private readonly config;
-    private readonly logger;
-    private readonly enabled;
-    private readonly fromEmail?;
-    constructor(config: ConfigService);
+    private readonly mail;
+    private readonly transactional;
+    constructor(mail: AppMailService, transactional: TransactionalEmailService);
     sendNotificationEmail(input: SendNotificationEmailInput): Promise<void>;
-    private buildSubject;
 }
 export {};

@@ -2,11 +2,16 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserRole } from '@prisma/client';
 import type { JwtPayload } from '../../auth/auth.types';
-import * as sgMail from '@sendgrid/mail';
 import type { OAuthProvider } from './oauth.types';
+import { TransactionalEmailService } from '../email/transactional-email.service';
+
+const EMAIL_VERIFY_HOURS = 24;
+const PASSWORD_RESET_HOURS = 1;
+const RESEND_VERIFICATION_COOLDOWN_MS = 60_000;
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -18,12 +23,17 @@ function generateNumericCode(length = 6) {
   return String(value).padStart(length, '0');
 }
 
+function hashOpaqueToken(raw: string) {
+  return createHash('sha256').update(raw, 'utf8').digest('hex');
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly transactional: TransactionalEmailService,
   ) {}
 
   async register(input: {
@@ -44,6 +54,12 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(input.password, 12);
     const role = input.role ?? UserRole.CLIENT;
 
+    const rawToken = randomBytes(32).toString('base64url');
+    const tokenHash = hashOpaqueToken(rawToken);
+    const otp = generateNumericCode(6);
+    const otpHash = await bcrypt.hash(otp, 12);
+    const expiresAt = new Date(Date.now() + EMAIL_VERIFY_HOURS * 60 * 60 * 1000);
+    const sentAt = new Date();
     const user = await this.prisma.user.create({
       data: {
         email,
@@ -55,6 +71,11 @@ export class AuthService {
         city: input.city.trim(),
         state: input.state.trim(),
         postalCode: input.postalCode.trim(),
+        emailVerifiedAt: null,
+        emailVerificationTokenHash: tokenHash,
+        emailVerificationExpiresAt: expiresAt,
+        emailVerificationOtpHash: otpHash,
+        emailVerificationLastSentAt: sentAt,
         ...(role === UserRole.PROVIDER
           ? { providerProfile: { create: { skills: [], certifications: [] } } }
           : {}),
@@ -63,22 +84,220 @@ export class AuthService {
       select: {
         id: true,
         email: true,
-        role: true,
-        entityId: true,
-        createdAt: true,
         firstName: true,
         lastName: true,
-        country: true,
-        city: true,
-        state: true,
-        postalCode: true,
       },
     });
 
+    const webOrigin = (this.config.get<string>('WEB_ORIGIN') ?? 'http://localhost:3000').replace(/\/$/, '');
+    const verifyUrl = `${webOrigin}/auth/verify-email/confirm?token=${encodeURIComponent(rawToken)}`;
+
+    await this.transactional.sendSignupVerification({
+      to: user.email,
+      firstName: user.firstName ?? 'there',
+      verifyUrl,
+      otp,
+      expiresHours: EMAIL_VERIFY_HOURS,
+    });
+
     return {
-      user,
-      accessToken: await this.signAccessToken({ sub: user.id, role: user.role }),
+      needsEmailVerification: true as const,
+      email: user.email,
     };
+  }
+
+  async verifyEmail(input: { email?: string; code?: string; token?: string }) {
+    const token = input.token?.trim();
+    if (token) {
+      return await this.verifyEmailByToken(token);
+    }
+    const email = input.email ? normalizeEmail(input.email) : '';
+    const code = input.code?.trim() ?? '';
+    if (!email || !code) {
+      throw new BadRequestException('Provide either a verification link token or your email and 6-digit code');
+    }
+    return await this.verifyEmailByOtp(email, code);
+  }
+
+  private async verifyEmailByToken(rawToken: string) {
+    const tokenHash = hashOpaqueToken(rawToken);
+    const now = new Date();
+    const user = await this.prisma.user.findFirst({
+      where: { emailVerificationTokenHash: tokenHash },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        emailVerifiedAt: true,
+        emailVerificationExpiresAt: true,
+      },
+    });
+    if (!user) throw new BadRequestException('Invalid or expired verification link');
+    if (user.emailVerifiedAt) {
+      return { verified: true as const };
+    }
+    if (!user.emailVerificationExpiresAt || user.emailVerificationExpiresAt <= now) {
+      throw new BadRequestException('Invalid or expired verification link');
+    }
+
+    await this.finishEmailVerification(user.id, user.email, user.firstName ?? 'there');
+    return { verified: true as const };
+  }
+
+  private async verifyEmailByOtp(email: string, code: string) {
+    const now = new Date();
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        emailVerifiedAt: true,
+        emailVerificationOtpHash: true,
+        emailVerificationExpiresAt: true,
+      },
+    });
+    if (!user) throw new BadRequestException('Invalid code');
+    if (user.emailVerifiedAt) {
+      return { verified: true as const };
+    }
+    if (!user.emailVerificationOtpHash || !user.emailVerificationExpiresAt) {
+      throw new BadRequestException('Invalid code');
+    }
+    if (user.emailVerificationExpiresAt <= now) {
+      throw new BadRequestException('Verification code has expired');
+    }
+    const ok = await bcrypt.compare(code, user.emailVerificationOtpHash);
+    if (!ok) throw new BadRequestException('Invalid code');
+
+    await this.finishEmailVerification(user.id, user.email, user.firstName ?? 'there');
+    return { verified: true as const };
+  }
+
+  private async finishEmailVerification(userId: string, email: string, firstName: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        emailVerifiedAt: new Date(),
+        emailVerificationTokenHash: null,
+        emailVerificationExpiresAt: null,
+        emailVerificationOtpHash: null,
+        emailVerificationLastSentAt: null,
+      },
+    });
+    await this.transactional.sendEmailVerifiedWelcome({ to: email, firstName });
+  }
+
+  async resendVerification(emailInput: string) {
+    const email = normalizeEmail(emailInput);
+    const now = new Date();
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        emailVerifiedAt: true,
+        emailVerificationLastSentAt: true,
+      },
+    });
+    if (!user || user.emailVerifiedAt) {
+      return { ok: true as const };
+    }
+    if (
+      user.emailVerificationLastSentAt &&
+      now.getTime() - user.emailVerificationLastSentAt.getTime() < RESEND_VERIFICATION_COOLDOWN_MS
+    ) {
+      return { ok: true as const };
+    }
+
+    const rawToken = randomBytes(32).toString('base64url');
+    const tokenHash = hashOpaqueToken(rawToken);
+    const otp = generateNumericCode(6);
+    const otpHash = await bcrypt.hash(otp, 12);
+    const expiresAt = new Date(Date.now() + EMAIL_VERIFY_HOURS * 60 * 60 * 1000);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerificationTokenHash: tokenHash,
+        emailVerificationExpiresAt: expiresAt,
+        emailVerificationOtpHash: otpHash,
+        emailVerificationLastSentAt: now,
+      },
+    });
+
+    const webOrigin = (this.config.get<string>('WEB_ORIGIN') ?? 'http://localhost:3000').replace(/\/$/, '');
+    const verifyUrl = `${webOrigin}/auth/verify-email/confirm?token=${encodeURIComponent(rawToken)}`;
+
+    await this.transactional.sendSignupVerification({
+      to: user.email,
+      firstName: user.firstName ?? 'there',
+      verifyUrl,
+      otp,
+      expiresHours: EMAIL_VERIFY_HOURS,
+    });
+
+    return { ok: true as const };
+  }
+
+  async forgotPassword(emailInput: string) {
+    const email = normalizeEmail(emailInput);
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, emailVerifiedAt: true },
+    });
+    if (!user?.emailVerifiedAt) {
+      return { ok: true as const };
+    }
+
+    const rawToken = randomBytes(32).toString('base64url');
+    const tokenHash = hashOpaqueToken(rawToken);
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_HOURS * 60 * 60 * 1000);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: expiresAt,
+      },
+    });
+
+    const webOrigin = (this.config.get<string>('WEB_ORIGIN') ?? 'http://localhost:3000').replace(/\/$/, '');
+    const resetUrl = `${webOrigin}/auth/reset-password?token=${encodeURIComponent(rawToken)}`;
+
+    await this.transactional.sendPasswordReset({
+      to: user.email,
+      resetUrl,
+      expiresHours: PASSWORD_RESET_HOURS,
+    });
+
+    return { ok: true as const };
+  }
+
+  async resetPassword(input: { token: string; password: string }) {
+    const rawToken = input.token.trim();
+    const tokenHash = hashOpaqueToken(rawToken);
+    const now = new Date();
+    const user = await this.prisma.user.findFirst({
+      where: {
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: { gt: now },
+      },
+      select: { id: true },
+    });
+    if (!user) throw new BadRequestException('Invalid or expired reset link');
+
+    const passwordHash = await bcrypt.hash(input.password, 12);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: passwordHash,
+        passwordResetTokenHash: null,
+        passwordResetExpiresAt: null,
+      },
+    });
+
+    return { ok: true as const };
   }
 
   async checkEmailAvailability(emailInput: string) {
@@ -94,6 +313,13 @@ export class AuthService {
 
     const ok = await bcrypt.compare(input.password, user.password);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
+
+    if (!user.emailVerifiedAt) {
+      throw new UnauthorizedException({
+        message: 'Please verify your email before signing in. Check your inbox for the code.',
+        code: 'EMAIL_NOT_VERIFIED',
+      });
+    }
 
     return {
       user: { id: user.id, email: user.email, role: user.role, entityId: user.entityId, createdAt: user.createdAt },
@@ -118,7 +344,7 @@ export class AuthService {
       },
     });
 
-    await this.sendLoginCodeEmail(email, code, ttlMinutes);
+    await this.transactional.sendLoginOtp({ to: email, code, ttlMinutes });
 
     return { ok: true };
   }
@@ -155,8 +381,6 @@ export class AuthService {
 
     let user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      // Create an account on first successful code verification (email-only onboarding).
-      // Password is set to a random value; user can later set/rotate credentials.
       const randomPasswordHash = await bcrypt.hash(`${email}:${Date.now()}:${Math.random()}`, 12);
       user = await this.prisma.user.create({
         data: {
@@ -164,7 +388,15 @@ export class AuthService {
           password: randomPasswordHash,
           role: UserRole.CLIENT,
           clientProfile: { create: {} },
+          emailVerifiedAt: now,
         },
+      });
+    }
+
+    if (!user.emailVerifiedAt) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerifiedAt: now },
       });
     }
 
@@ -183,6 +415,7 @@ export class AuthService {
     const email = normalizeEmail(input.email);
 
     let user = await this.prisma.user.findUnique({ where: { email } });
+    const now = new Date();
     if (!user) {
       const randomPasswordHash = await bcrypt.hash(`${email}:${Date.now()}:${Math.random()}`, 12);
       user = await this.prisma.user.create({
@@ -191,6 +424,18 @@ export class AuthService {
           password: randomPasswordHash,
           role: UserRole.CLIENT,
           clientProfile: { create: {} },
+          emailVerifiedAt: now,
+        },
+      });
+    } else if (!user.emailVerifiedAt) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          emailVerifiedAt: now,
+          emailVerificationTokenHash: null,
+          emailVerificationExpiresAt: null,
+          emailVerificationOtpHash: null,
+          emailVerificationLastSentAt: null,
         },
       });
     }
@@ -204,36 +449,4 @@ export class AuthService {
   private async signAccessToken(payload: JwtPayload) {
     return await this.jwt.signAsync(payload);
   }
-
-  private async sendLoginCodeEmail(toEmail: string, code: string, ttlMinutes: number) {
-    const enabled =
-      this.config.get<string>('SENDGRID_ENABLED') === 'true' || !!this.config.get<string>('SENDGRID_API_KEY');
-    if (!enabled) return;
-
-    const fromEmail = this.config.get<string>('SENDGRID_FROM_EMAIL');
-    if (!fromEmail) return;
-
-    const apiKey = this.config.get<string>('SENDGRID_API_KEY');
-    if (apiKey) sgMail.setApiKey(apiKey);
-
-    const fromName = this.config.get<string>('SENDGRID_FROM_NAME') ?? 'HackersDeal';
-    const subject = 'Your HackersDeal login code';
-    const text = [
-      'Use this one-time code to sign in:',
-      '',
-      code,
-      '',
-      `This code expires in ${ttlMinutes} minutes.`,
-      '',
-      'If you did not request this, you can ignore this email.',
-    ].join('\n');
-
-    await sgMail.send({
-      to: toEmail,
-      from: { email: fromEmail, name: fromName },
-      subject,
-      text,
-    });
-  }
 }
-

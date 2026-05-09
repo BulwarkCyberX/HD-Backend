@@ -3,11 +3,13 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserRole } from '@prisma/client';
 import type { OAuthProvider } from './oauth.types';
+import { TransactionalEmailService } from '../email/transactional-email.service';
 export declare class AuthService {
     private readonly prisma;
     private readonly jwt;
     private readonly config;
-    constructor(prisma: PrismaService, jwt: JwtService, config: ConfigService);
+    private readonly transactional;
+    constructor(prisma: PrismaService, jwt: JwtService, config: ConfigService, transactional: TransactionalEmailService);
     register(input: {
         email: string;
         password: string;
@@ -19,20 +21,30 @@ export declare class AuthService {
         state: string;
         postalCode: string;
     }): Promise<{
-        user: {
-            id: string;
-            email: string;
-            role: import(".prisma/client").$Enums.UserRole;
-            firstName: string | null;
-            lastName: string | null;
-            country: string | null;
-            city: string | null;
-            state: string | null;
-            postalCode: string | null;
-            entityId: string | null;
-            createdAt: Date;
-        };
-        accessToken: string;
+        needsEmailVerification: true;
+        email: string;
+    }>;
+    verifyEmail(input: {
+        email?: string;
+        code?: string;
+        token?: string;
+    }): Promise<{
+        verified: true;
+    }>;
+    private verifyEmailByToken;
+    private verifyEmailByOtp;
+    private finishEmailVerification;
+    resendVerification(emailInput: string): Promise<{
+        ok: true;
+    }>;
+    forgotPassword(emailInput: string): Promise<{
+        ok: true;
+    }>;
+    resetPassword(input: {
+        token: string;
+        password: string;
+    }): Promise<{
+        ok: true;
     }>;
     checkEmailAvailability(emailInput: string): Promise<{
         available: boolean;
@@ -84,5 +96,4 @@ export declare class AuthService {
         accessToken: string;
     }>;
     private signAccessToken;
-    private sendLoginCodeEmail;
 }

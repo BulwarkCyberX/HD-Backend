@@ -6,6 +6,11 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RequestLoginCodeDto } from './dto/request-login-code.dto';
 import { VerifyLoginCodeDto } from './dto/verify-login-code.dto';
+import { VerifyEmailOtpDto } from './dto/verify-email-otp.dto';
+import { VerifyEmailTokenDto } from './dto/verify-email-token.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import type { OAuthProvider, OAuthUser } from './oauth.types';
 
 @Controller('auth')
@@ -15,6 +20,36 @@ export class AuthController {
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.auth.register(dto);
+  }
+
+  @Post('verify-email/otp')
+  @HttpCode(HttpStatus.OK)
+  verifyEmailOtp(@Body() dto: VerifyEmailOtpDto) {
+    return this.auth.verifyEmail({ email: dto.email, code: dto.code });
+  }
+
+  @Post('verify-email/token')
+  @HttpCode(HttpStatus.OK)
+  verifyEmailToken(@Body() dto: VerifyEmailTokenDto) {
+    return this.auth.verifyEmail({ token: dto.token });
+  }
+
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.auth.resendVerification(dto.email);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.auth.forgotPassword(dto.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.auth.resetPassword({ token: dto.token, password: dto.password });
   }
 
   @Get('check-email')
