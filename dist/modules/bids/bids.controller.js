@@ -23,7 +23,6 @@ const bids_service_1 = require("./bids.service");
 const create_bid_dto_1 = require("./dto/create-bid.dto");
 const update_bid_status_dto_1 = require("./dto/update-bid-status.dto");
 let BidsController = class BidsController {
-    bids;
     constructor(bids) {
         this.bids = bids;
     }

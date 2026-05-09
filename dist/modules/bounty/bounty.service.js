@@ -15,43 +15,41 @@ const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 let BountyService = class BountyService {
-    prisma;
-    notifications;
     constructor(prisma, notifications) {
         this.prisma = prisma;
         this.notifications = notifications;
-    }
-    programSelect = {
-        id: true,
-        clientId: true,
-        title: true,
-        description: true,
-        scope: true,
-        rewardTable: true,
-        status: true,
-        allowedResearcherIds: true,
-        createdAt: true,
-    };
-    bugReportSelect = {
-        id: true,
-        programId: true,
-        researcherId: true,
-        title: true,
-        description: true,
-        severity: true,
-        status: true,
-        createdAt: true,
-        researcher: { select: { id: true, email: true } },
-        files: {
-            select: {
-                id: true,
-                originalName: true,
-                mimeType: true,
-                size: true,
-                createdAt: true,
+        this.programSelect = {
+            id: true,
+            clientId: true,
+            title: true,
+            description: true,
+            scope: true,
+            rewardTable: true,
+            status: true,
+            allowedResearcherIds: true,
+            createdAt: true,
+        };
+        this.bugReportSelect = {
+            id: true,
+            programId: true,
+            researcherId: true,
+            title: true,
+            description: true,
+            severity: true,
+            status: true,
+            createdAt: true,
+            researcher: { select: { id: true, email: true } },
+            files: {
+                select: {
+                    id: true,
+                    originalName: true,
+                    mimeType: true,
+                    size: true,
+                    createdAt: true,
+                },
             },
-        },
-    };
+        };
+    }
     async createProgram(input) {
         if (input.role !== client_1.UserRole.CLIENT) {
             throw new common_1.ForbiddenException('Only clients can create bug bounty programs');

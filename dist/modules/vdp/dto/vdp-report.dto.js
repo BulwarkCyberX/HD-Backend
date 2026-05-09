@@ -13,11 +13,6 @@ exports.VdpReportDto = void 0;
 const client_1 = require("@prisma/client");
 const class_validator_1 = require("class-validator");
 class VdpReportDto {
-    vdpId;
-    title;
-    description;
-    contactEmail;
-    severity;
 }
 exports.VdpReportDto = VdpReportDto;
 __decorate([

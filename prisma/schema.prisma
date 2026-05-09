@@ -106,6 +106,13 @@ model User {
   password  String
   role      UserRole @default(CLIENT)
 
+  firstName  String?
+  lastName   String?
+  country    String?
+  city       String?
+  state      String?
+  postalCode String?
+
   entityId  String?
   entity    Entity?  @relation(fields: [entityId], references: [id], onDelete: SetNull)
 
@@ -398,4 +405,18 @@ model Notification {
 
   @@index([userId])
   @@index([userId, read])
+}
+
+model LoginCode {
+  id         String   @id @default(cuid())
+  email      String
+  codeHash   String
+  attempts   Int      @default(0)
+  consumedAt DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([email])
+  @@index([email, expiresAt])
+  @@index([email, consumedAt])
 }

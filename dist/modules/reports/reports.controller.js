@@ -23,7 +23,6 @@ const create_report_dto_1 = require("./dto/create-report.dto");
 const reports_service_1 = require("./reports.service");
 const triage_report_dto_1 = require("./dto/triage-report.dto");
 let ReportsController = class ReportsController {
-    reports;
     constructor(reports) {
         this.reports = reports;
     }

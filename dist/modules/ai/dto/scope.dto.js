@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AiScopeDto = void 0;
 const class_validator_1 = require("class-validator");
 class AiScopeDto {
-    description;
 }
 exports.AiScopeDto = AiScopeDto;
 __decorate([

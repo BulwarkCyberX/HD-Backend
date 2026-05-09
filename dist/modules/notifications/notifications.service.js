@@ -8,19 +8,43 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var NotificationsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
-let NotificationsService = class NotificationsService {
-    prisma;
-    constructor(prisma) {
+const notification_email_service_1 = require("../email/notification-email.service");
+let NotificationsService = NotificationsService_1 = class NotificationsService {
+    constructor(prisma, notificationEmail) {
         this.prisma = prisma;
+        this.notificationEmail = notificationEmail;
+        this.logger = new common_1.Logger(NotificationsService_1.name);
     }
     async create(input) {
-        return await this.prisma.notification.create({
+        const created = await this.prisma.notification.create({
             data: { userId: input.userId, type: input.type, message: input.message },
         });
+        void this.trySendNotificationEmail(input);
+        return created;
+    }
+    async trySendNotificationEmail(input) {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { id: input.userId },
+                select: { email: true },
+            });
+            if (!user?.email)
+                return;
+            await this.notificationEmail.sendNotificationEmail({
+                toEmail: user.email,
+                type: input.type,
+                message: input.message,
+            });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            this.logger.error(`Notification email failed: ${message}`);
+        }
     }
     async listForUser(userId) {
         return await this.prisma.notification.findMany({
@@ -43,8 +67,9 @@ let NotificationsService = class NotificationsService {
     }
 };
 exports.NotificationsService = NotificationsService;
-exports.NotificationsService = NotificationsService = __decorate([
+exports.NotificationsService = NotificationsService = NotificationsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        notification_email_service_1.NotificationEmailService])
 ], NotificationsService);
 //# sourceMappingURL=notifications.service.js.map

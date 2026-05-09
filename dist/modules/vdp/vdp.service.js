@@ -14,17 +14,16 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 let VdpService = class VdpService {
-    prisma;
     constructor(prisma) {
         this.prisma = prisma;
+        this.publicSelect = {
+            id: true,
+            title: true,
+            scope: true,
+            policy: true,
+            createdAt: true,
+        };
     }
-    publicSelect = {
-        id: true,
-        title: true,
-        scope: true,
-        policy: true,
-        createdAt: true,
-    };
     async create(input) {
         if (input.role !== client_1.UserRole.CLIENT) {
             throw new common_1.ForbiddenException('Only clients can create VDP listings');

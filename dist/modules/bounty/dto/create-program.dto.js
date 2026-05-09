@@ -13,12 +13,6 @@ exports.CreateProgramDto = void 0;
 const client_1 = require("@prisma/client");
 const class_validator_1 = require("class-validator");
 class CreateProgramDto {
-    title;
-    description;
-    scope;
-    rewardTable;
-    status;
-    allowedResearcherIds;
 }
 exports.CreateProgramDto = CreateProgramDto;
 __decorate([

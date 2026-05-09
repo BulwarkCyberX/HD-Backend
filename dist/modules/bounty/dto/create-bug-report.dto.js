@@ -13,10 +13,6 @@ exports.CreateBugReportDto = void 0;
 const client_1 = require("@prisma/client");
 const class_validator_1 = require("class-validator");
 class CreateBugReportDto {
-    programId;
-    title;
-    description;
-    severity;
 }
 exports.CreateBugReportDto = CreateBugReportDto;
 __decorate([

@@ -15,22 +15,20 @@ const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 let PaymentsService = class PaymentsService {
-    prisma;
-    notifications;
     constructor(prisma, notifications) {
         this.prisma = prisma;
         this.notifications = notifications;
+        this.paymentSelect = {
+            id: true,
+            projectId: true,
+            payerId: true,
+            payeeId: true,
+            amount: true,
+            currency: true,
+            status: true,
+            createdAt: true,
+        };
     }
-    paymentSelect = {
-        id: true,
-        projectId: true,
-        payerId: true,
-        payeeId: true,
-        amount: true,
-        currency: true,
-        status: true,
-        createdAt: true,
-    };
     async deposit(input) {
         if (input.role !== client_1.UserRole.CLIENT) {
             throw new common_1.ForbiddenException('Only clients can deposit payment');

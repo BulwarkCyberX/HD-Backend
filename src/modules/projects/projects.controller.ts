@@ -9,12 +9,11 @@ import { UserRole } from '@prisma/client';
 import { CompleteProjectDto } from './dto/complete-project.dto';
 
 @Controller('projects')
-@UseGuards(JwtAuthGuard)
 export class ProjectsController {
   constructor(private readonly projects: ProjectsService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.CLIENT)
   create(@CurrentUser() user: RequestUser, @Body() dto: CreateProjectDto) {
     return this.projects.create({
@@ -44,7 +43,7 @@ export class ProjectsController {
   }
 
   @Patch(':id/complete')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.CLIENT)
   complete(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() dto: CompleteProjectDto) {
     return this.projects.completeProject({

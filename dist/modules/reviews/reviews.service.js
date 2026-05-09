@@ -14,34 +14,33 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 let ReviewsService = class ReviewsService {
-    prisma;
     constructor(prisma) {
         this.prisma = prisma;
-    }
-    reviewSelect = {
-        id: true,
-        projectId: true,
-        clientId: true,
-        providerId: true,
-        rating: true,
-        comment: true,
-        createdAt: true,
-        provider: {
-            select: {
-                id: true,
-                email: true,
-                providerProfile: {
-                    select: {
-                        rating: true,
-                        totalReviews: true,
-                        completedProjects: true,
-                        validReportCount: true,
-                        reputationScore: true,
+        this.reviewSelect = {
+            id: true,
+            projectId: true,
+            clientId: true,
+            providerId: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            provider: {
+                select: {
+                    id: true,
+                    email: true,
+                    providerProfile: {
+                        select: {
+                            rating: true,
+                            totalReviews: true,
+                            completedProjects: true,
+                            validReportCount: true,
+                            reputationScore: true,
+                        },
                     },
                 },
             },
-        },
-    };
+        };
+    }
     async create(input) {
         if (input.role !== client_1.UserRole.CLIENT) {
             throw new common_1.ForbiddenException('Only clients can submit reviews');

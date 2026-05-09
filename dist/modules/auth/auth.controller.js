@@ -14,19 +14,75 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
 const auth_service_1 = require("./auth.service");
 const register_dto_1 = require("./dto/register.dto");
 const login_dto_1 = require("./dto/login.dto");
+const request_login_code_dto_1 = require("./dto/request-login-code.dto");
+const verify_login_code_dto_1 = require("./dto/verify-login-code.dto");
 let AuthController = class AuthController {
-    auth;
     constructor(auth) {
         this.auth = auth;
     }
     register(dto) {
         return this.auth.register(dto);
     }
+    checkEmail(email) {
+        return this.auth.checkEmailAvailability(email);
+    }
     login(dto) {
         return this.auth.login(dto);
+    }
+    requestLoginCode(dto) {
+        return this.auth.requestLoginCode(dto);
+    }
+    verifyLoginCode(dto) {
+        return this.auth.verifyLoginCode(dto);
+    }
+    oauthGoogle(next) {
+        return { next };
+    }
+    async oauthGoogleCallback(req, res, next) {
+        return await this.finishOAuth('google', req, res, next);
+    }
+    oauthMicrosoft(next) {
+        return { next };
+    }
+    async oauthMicrosoftCallback(req, res, next) {
+        return await this.finishOAuth('microsoft', req, res, next);
+    }
+    oauthFacebook(next) {
+        return { next };
+    }
+    async oauthFacebookCallback(req, res, next) {
+        return await this.finishOAuth('facebook', req, res, next);
+    }
+    oauthLinkedIn(next) {
+        return { next };
+    }
+    async oauthLinkedInCallback(req, res, next) {
+        return await this.finishOAuth('linkedin', req, res, next);
+    }
+    async finishOAuth(provider, req, res, next) {
+        const oauthUser = req.user;
+        const webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:3000';
+        if (!oauthUser?.email) {
+            const errorUrl = new URL('/auth/login', webOrigin);
+            errorUrl.searchParams.set('error', 'oauth_missing_email');
+            res.redirect(errorUrl.toString());
+            return;
+        }
+        const session = await this.auth.loginWithOAuth({
+            provider,
+            email: oauthUser.email,
+            providerId: oauthUser.providerId,
+            displayName: oauthUser.displayName,
+        });
+        const callbackUrl = new URL('/auth/callback', webOrigin);
+        callbackUrl.searchParams.set('token', session.accessToken);
+        if (next)
+            callbackUrl.searchParams.set('next', next);
+        res.redirect(callbackUrl.toString());
     }
 };
 exports.AuthController = AuthController;
@@ -38,6 +94,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "register", null);
 __decorate([
+    (0, common_1.Get)('check-email'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Query)('email')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "checkEmail", null);
+__decorate([
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
@@ -45,6 +109,94 @@ __decorate([
     __metadata("design:paramtypes", [login_dto_1.LoginDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('login/code/request'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [request_login_code_dto_1.RequestLoginCodeDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "requestLoginCode", null);
+__decorate([
+    (0, common_1.Post)('login/code/verify'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [verify_login_code_dto_1.VerifyLoginCodeDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "verifyLoginCode", null);
+__decorate([
+    (0, common_1.Get)('oauth/google'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('google')),
+    __param(0, (0, common_1.Query)('next')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "oauthGoogle", null);
+__decorate([
+    (0, common_1.Get)('oauth/google/callback'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('google')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)()),
+    __param(2, (0, common_1.Query)('next')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "oauthGoogleCallback", null);
+__decorate([
+    (0, common_1.Get)('oauth/microsoft'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('microsoft')),
+    __param(0, (0, common_1.Query)('next')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "oauthMicrosoft", null);
+__decorate([
+    (0, common_1.Get)('oauth/microsoft/callback'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('microsoft')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)()),
+    __param(2, (0, common_1.Query)('next')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "oauthMicrosoftCallback", null);
+__decorate([
+    (0, common_1.Get)('oauth/facebook'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('facebook')),
+    __param(0, (0, common_1.Query)('next')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "oauthFacebook", null);
+__decorate([
+    (0, common_1.Get)('oauth/facebook/callback'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('facebook')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)()),
+    __param(2, (0, common_1.Query)('next')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "oauthFacebookCallback", null);
+__decorate([
+    (0, common_1.Get)('oauth/linkedin'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('linkedin')),
+    __param(0, (0, common_1.Query)('next')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "oauthLinkedIn", null);
+__decorate([
+    (0, common_1.Get)('oauth/linkedin/callback'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('linkedin')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)()),
+    __param(2, (0, common_1.Query)('next')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "oauthLinkedInCallback", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

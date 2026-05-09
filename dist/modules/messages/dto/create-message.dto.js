@@ -12,8 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateMessageDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateMessageDto {
-    projectId;
-    message;
 }
 exports.CreateMessageDto = CreateMessageDto;
 __decorate([

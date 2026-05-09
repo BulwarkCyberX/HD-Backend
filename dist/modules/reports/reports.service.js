@@ -15,43 +15,41 @@ const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 let ReportsService = class ReportsService {
-    prisma;
-    notifications;
     constructor(prisma, notifications) {
         this.prisma = prisma;
         this.notifications = notifications;
+        this.reportSelect = {
+            id: true,
+            projectId: true,
+            submittedBy: true,
+            title: true,
+            description: true,
+            severity: true,
+            status: true,
+            triageNotes: true,
+            validatedBy: true,
+            createdAt: true,
+            submitter: { select: { id: true, email: true, role: true } },
+            validator: { select: { id: true, email: true, role: true } },
+            files: {
+                select: {
+                    id: true,
+                    originalName: true,
+                    mimeType: true,
+                    size: true,
+                    createdAt: true,
+                },
+            },
+            project: {
+                select: {
+                    id: true,
+                    title: true,
+                    clientId: true,
+                    selectedProviderId: true,
+                },
+            },
+        };
     }
-    reportSelect = {
-        id: true,
-        projectId: true,
-        submittedBy: true,
-        title: true,
-        description: true,
-        severity: true,
-        status: true,
-        triageNotes: true,
-        validatedBy: true,
-        createdAt: true,
-        submitter: { select: { id: true, email: true, role: true } },
-        validator: { select: { id: true, email: true, role: true } },
-        files: {
-            select: {
-                id: true,
-                originalName: true,
-                mimeType: true,
-                size: true,
-                createdAt: true,
-            },
-        },
-        project: {
-            select: {
-                id: true,
-                title: true,
-                clientId: true,
-                selectedProviderId: true,
-            },
-        },
-    };
     async assertProjectParticipant(projectId, userId) {
         const project = await this.prisma.project.findUnique({
             where: { id: projectId },

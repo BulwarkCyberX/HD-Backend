@@ -14,8 +14,6 @@ const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const client_1 = require("@prisma/client");
 class ProjectAssetDto {
-    type;
-    value;
 }
 exports.ProjectAssetDto = ProjectAssetDto;
 __decorate([
@@ -29,16 +27,6 @@ __decorate([
     __metadata("design:type", String)
 ], ProjectAssetDto.prototype, "value", void 0);
 class CreateProjectDto {
-    title;
-    description;
-    assets;
-    inScope;
-    outOfScope;
-    testingWindow;
-    budgetType;
-    budgetAmount;
-    timeline;
-    visibility;
 }
 exports.CreateProjectDto = CreateProjectDto;
 __decorate([

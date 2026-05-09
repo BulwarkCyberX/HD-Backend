@@ -12,9 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateReviewDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateReviewDto {
-    projectId;
-    rating;
-    comment;
 }
 exports.CreateReviewDto = CreateReviewDto;
 __decorate([

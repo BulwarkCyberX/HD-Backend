@@ -15,38 +15,36 @@ const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 let BidsService = class BidsService {
-    prisma;
-    notifications;
     constructor(prisma, notifications) {
         this.prisma = prisma;
         this.notifications = notifications;
-    }
-    bidSelect = {
-        id: true,
-        projectId: true,
-        providerId: true,
-        proposal: true,
-        price: true,
-        timeline: true,
-        status: true,
-        createdAt: true,
-        provider: {
-            select: {
-                id: true,
-                email: true,
-                providerProfile: {
-                    select: {
-                        bidCredits: true,
-                        rating: true,
-                        totalReviews: true,
-                        completedProjects: true,
-                        validReportCount: true,
-                        reputationScore: true,
+        this.bidSelect = {
+            id: true,
+            projectId: true,
+            providerId: true,
+            proposal: true,
+            price: true,
+            timeline: true,
+            status: true,
+            createdAt: true,
+            provider: {
+                select: {
+                    id: true,
+                    email: true,
+                    providerProfile: {
+                        select: {
+                            bidCredits: true,
+                            rating: true,
+                            totalReviews: true,
+                            completedProjects: true,
+                            validReportCount: true,
+                            reputationScore: true,
+                        },
                     },
                 },
             },
-        },
-    };
+        };
+    }
     async create(input) {
         if (input.role !== client_1.UserRole.PROVIDER) {
             throw new common_1.ForbiddenException('Only providers can submit bids');

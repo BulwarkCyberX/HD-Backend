@@ -13,9 +13,6 @@ exports.AiReportReviewDto = void 0;
 const client_1 = require("@prisma/client");
 const class_validator_1 = require("class-validator");
 class AiReportReviewDto {
-    title;
-    description;
-    severity;
 }
 exports.AiReportReviewDto = AiReportReviewDto;
 __decorate([

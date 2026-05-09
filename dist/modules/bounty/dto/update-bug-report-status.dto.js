@@ -13,7 +13,6 @@ exports.UpdateBugReportStatusDto = void 0;
 const client_1 = require("@prisma/client");
 const class_validator_1 = require("class-validator");
 class UpdateBugReportStatusDto {
-    status;
 }
 exports.UpdateBugReportStatusDto = UpdateBugReportStatusDto;
 __decorate([

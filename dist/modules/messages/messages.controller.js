@@ -19,7 +19,6 @@ const jwt_auth_guard_1 = require("../../auth/jwt-auth.guard");
 const create_message_dto_1 = require("./dto/create-message.dto");
 const messages_service_1 = require("./messages.service");
 let MessagesController = class MessagesController {
-    messages;
     constructor(messages) {
         this.messages = messages;
     }

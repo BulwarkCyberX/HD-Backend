@@ -14,61 +14,60 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 let ProjectsService = class ProjectsService {
-    prisma;
     constructor(prisma) {
         this.prisma = prisma;
-    }
-    projectSelect = {
-        id: true,
-        title: true,
-        description: true,
-        assets: true,
-        inScope: true,
-        outOfScope: true,
-        testingWindow: true,
-        budgetType: true,
-        budgetAmount: true,
-        timeline: true,
-        visibility: true,
-        clientId: true,
-        selectedProviderId: true,
-        selectedProvider: {
-            select: {
-                id: true,
-                email: true,
-                providerProfile: {
-                    select: {
-                        rating: true,
-                        totalReviews: true,
-                        completedProjects: true,
-                        validReportCount: true,
-                        reputationScore: true,
+        this.projectSelect = {
+            id: true,
+            title: true,
+            description: true,
+            assets: true,
+            inScope: true,
+            outOfScope: true,
+            testingWindow: true,
+            budgetType: true,
+            budgetAmount: true,
+            timeline: true,
+            visibility: true,
+            clientId: true,
+            selectedProviderId: true,
+            selectedProvider: {
+                select: {
+                    id: true,
+                    email: true,
+                    providerProfile: {
+                        select: {
+                            rating: true,
+                            totalReviews: true,
+                            completedProjects: true,
+                            validReportCount: true,
+                            reputationScore: true,
+                        },
                     },
                 },
             },
-        },
-        review: {
-            select: {
-                id: true,
-                rating: true,
-                comment: true,
-                clientId: true,
-                providerId: true,
-                createdAt: true,
+            review: {
+                select: {
+                    id: true,
+                    rating: true,
+                    comment: true,
+                    clientId: true,
+                    providerId: true,
+                    createdAt: true,
+                },
             },
-        },
-        payment: {
-            select: {
-                id: true,
-                amount: true,
-                currency: true,
-                status: true,
-                createdAt: true,
+            payment: {
+                select: {
+                    id: true,
+                    amount: true,
+                    currency: true,
+                    status: true,
+                    createdAt: true,
+                },
             },
-        },
-        status: true,
-        createdAt: true,
-    };
+            status: true,
+            createdAt: true,
+        };
+    }
     async create(input) {
         if (input.role !== client_1.UserRole.CLIENT) {
             throw new common_1.ForbiddenException('Only clients can create projects');

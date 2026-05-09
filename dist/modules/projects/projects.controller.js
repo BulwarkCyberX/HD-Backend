@@ -23,7 +23,6 @@ const roles_guard_1 = require("../../auth/roles.guard");
 const client_1 = require("@prisma/client");
 const complete_project_dto_1 = require("./dto/complete-project.dto");
 let ProjectsController = class ProjectsController {
-    projects;
     constructor(projects) {
         this.projects = projects;
     }
@@ -61,7 +60,7 @@ let ProjectsController = class ProjectsController {
 exports.ProjectsController = ProjectsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(client_1.UserRole.CLIENT),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
@@ -84,7 +83,7 @@ __decorate([
 ], ProjectsController.prototype, "getById", null);
 __decorate([
     (0, common_1.Patch)(':id/complete'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(client_1.UserRole.CLIENT),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id')),
@@ -95,7 +94,6 @@ __decorate([
 ], ProjectsController.prototype, "complete", null);
 exports.ProjectsController = ProjectsController = __decorate([
     (0, common_1.Controller)('projects'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [projects_service_1.ProjectsService])
 ], ProjectsController);
 //# sourceMappingURL=projects.controller.js.map

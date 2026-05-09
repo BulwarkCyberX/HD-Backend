@@ -19,7 +19,6 @@ const current_user_decorator_1 = require("../../auth/current-user.decorator");
 const create_entity_dto_1 = require("./dto/create-entity.dto");
 const entities_service_1 = require("./entities.service");
 let EntitiesController = class EntitiesController {
-    entities;
     constructor(entities) {
         this.entities = entities;
     }

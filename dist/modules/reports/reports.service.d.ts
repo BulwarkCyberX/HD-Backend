@@ -14,19 +14,27 @@ export declare class ReportsService {
         description: string;
         severity: ReportSeverity;
     }): Promise<{
-        id: string;
-        title: string;
-        description: string;
-        severity: import(".prisma/client").$Enums.ReportSeverity;
-        status: import(".prisma/client").$Enums.ReportStatus;
-        triageNotes: string | null;
-        createdAt: Date;
         project: {
             id: string;
             title: string;
             clientId: string;
             selectedProviderId: string | null;
         };
+        id: string;
+        createdAt: Date;
+        title: string;
+        description: string;
+        status: import(".prisma/client").$Enums.ReportStatus;
+        files: {
+            id: string;
+            createdAt: Date;
+            originalName: string;
+            mimeType: string;
+            size: number;
+        }[];
+        projectId: string;
+        severity: import(".prisma/client").$Enums.ReportSeverity;
+        triageNotes: string | null;
         submitter: {
             id: string;
             email: string;
@@ -37,14 +45,6 @@ export declare class ReportsService {
             email: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
-        files: {
-            id: string;
-            createdAt: Date;
-            originalName: string;
-            mimeType: string;
-            size: number;
-        }[];
-        projectId: string;
         submittedBy: string;
         validatedBy: string | null;
     }>;
@@ -53,19 +53,27 @@ export declare class ReportsService {
         requesterId: string;
         requesterRole: UserRole;
     }): Promise<{
-        id: string;
-        title: string;
-        description: string;
-        severity: import(".prisma/client").$Enums.ReportSeverity;
-        status: import(".prisma/client").$Enums.ReportStatus;
-        triageNotes: string | null;
-        createdAt: Date;
         project: {
             id: string;
             title: string;
             clientId: string;
             selectedProviderId: string | null;
         };
+        id: string;
+        createdAt: Date;
+        title: string;
+        description: string;
+        status: import(".prisma/client").$Enums.ReportStatus;
+        files: {
+            id: string;
+            createdAt: Date;
+            originalName: string;
+            mimeType: string;
+            size: number;
+        }[];
+        projectId: string;
+        severity: import(".prisma/client").$Enums.ReportSeverity;
+        triageNotes: string | null;
         submitter: {
             id: string;
             email: string;
@@ -76,33 +84,33 @@ export declare class ReportsService {
             email: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
-        files: {
-            id: string;
-            createdAt: Date;
-            originalName: string;
-            mimeType: string;
-            size: number;
-        }[];
-        projectId: string;
         submittedBy: string;
         validatedBy: string | null;
     }[]>;
     listAllForAdmin(input: {
         requesterRole: UserRole;
     }): Promise<{
-        id: string;
-        title: string;
-        description: string;
-        severity: import(".prisma/client").$Enums.ReportSeverity;
-        status: import(".prisma/client").$Enums.ReportStatus;
-        triageNotes: string | null;
-        createdAt: Date;
         project: {
             id: string;
             title: string;
             clientId: string;
             selectedProviderId: string | null;
         };
+        id: string;
+        createdAt: Date;
+        title: string;
+        description: string;
+        status: import(".prisma/client").$Enums.ReportStatus;
+        files: {
+            id: string;
+            createdAt: Date;
+            originalName: string;
+            mimeType: string;
+            size: number;
+        }[];
+        projectId: string;
+        severity: import(".prisma/client").$Enums.ReportSeverity;
+        triageNotes: string | null;
         submitter: {
             id: string;
             email: string;
@@ -113,14 +121,6 @@ export declare class ReportsService {
             email: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
-        files: {
-            id: string;
-            createdAt: Date;
-            originalName: string;
-            mimeType: string;
-            size: number;
-        }[];
-        projectId: string;
         submittedBy: string;
         validatedBy: string | null;
     }[]>;
@@ -131,19 +131,27 @@ export declare class ReportsService {
         status: 'VALID' | 'REJECTED' | 'NEED_MORE_INFO';
         triageNotes: string;
     }): Promise<{
-        id: string;
-        title: string;
-        description: string;
-        severity: import(".prisma/client").$Enums.ReportSeverity;
-        status: import(".prisma/client").$Enums.ReportStatus;
-        triageNotes: string | null;
-        createdAt: Date;
         project: {
             id: string;
             title: string;
             clientId: string;
             selectedProviderId: string | null;
         };
+        id: string;
+        createdAt: Date;
+        title: string;
+        description: string;
+        status: import(".prisma/client").$Enums.ReportStatus;
+        files: {
+            id: string;
+            createdAt: Date;
+            originalName: string;
+            mimeType: string;
+            size: number;
+        }[];
+        projectId: string;
+        severity: import(".prisma/client").$Enums.ReportSeverity;
+        triageNotes: string | null;
         submitter: {
             id: string;
             email: string;
@@ -154,14 +162,6 @@ export declare class ReportsService {
             email: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
-        files: {
-            id: string;
-            createdAt: Date;
-            originalName: string;
-            mimeType: string;
-            size: number;
-        }[];
-        projectId: string;
         submittedBy: string;
         validatedBy: string | null;
     }>;

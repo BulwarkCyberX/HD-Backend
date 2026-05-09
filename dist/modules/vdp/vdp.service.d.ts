@@ -13,16 +13,16 @@ export declare class VdpService {
     }): Promise<{
         id: string;
         createdAt: Date;
+        scope: import("@prisma/client/runtime/library").JsonValue;
         title: string;
         clientId: string;
-        scope: import("@prisma/client/runtime/library").JsonValue;
         policy: string;
     }>;
     getPublic(id: string): Promise<{
         id: string;
         createdAt: Date;
-        title: string;
         scope: import("@prisma/client/runtime/library").JsonValue;
+        title: string;
         policy: string;
     }>;
     submitReport(input: {

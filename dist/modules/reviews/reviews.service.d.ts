@@ -14,10 +14,6 @@ export declare class ReviewsService {
         id: string;
         createdAt: Date;
         rating: number;
-        clientId: string;
-        projectId: string;
-        providerId: string;
-        comment: string | null;
         provider: {
             providerProfile: {
                 rating: number;
@@ -29,5 +25,9 @@ export declare class ReviewsService {
             id: string;
             email: string;
         };
+        clientId: string;
+        projectId: string;
+        providerId: string;
+        comment: string | null;
     }>;
 }

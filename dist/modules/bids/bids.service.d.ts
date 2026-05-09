@@ -16,10 +16,6 @@ export declare class BidsService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        timeline: string;
-        status: import(".prisma/client").$Enums.BidStatus;
-        projectId: string;
-        providerId: string;
         provider: {
             providerProfile: {
                 rating: number;
@@ -32,6 +28,10 @@ export declare class BidsService {
             id: string;
             email: string;
         };
+        timeline: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        projectId: string;
+        providerId: string;
         proposal: string;
         price: number;
     }>;
@@ -42,10 +42,6 @@ export declare class BidsService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        timeline: string;
-        status: import(".prisma/client").$Enums.BidStatus;
-        projectId: string;
-        providerId: string;
         provider: {
             providerProfile: {
                 rating: number;
@@ -58,6 +54,10 @@ export declare class BidsService {
             id: string;
             email: string;
         };
+        timeline: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        projectId: string;
+        providerId: string;
         proposal: string;
         price: number;
     }[]>;
@@ -73,10 +73,6 @@ export declare class BidsService {
         };
         id: string;
         createdAt: Date;
-        timeline: string;
-        status: import(".prisma/client").$Enums.BidStatus;
-        projectId: string;
-        providerId: string;
         provider: {
             providerProfile: {
                 rating: number;
@@ -89,6 +85,10 @@ export declare class BidsService {
             id: string;
             email: string;
         };
+        timeline: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        projectId: string;
+        providerId: string;
         proposal: string;
         price: number;
     }[]>;
@@ -100,10 +100,6 @@ export declare class BidsService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        timeline: string;
-        status: import(".prisma/client").$Enums.BidStatus;
-        projectId: string;
-        providerId: string;
         provider: {
             providerProfile: {
                 rating: number;
@@ -116,6 +112,10 @@ export declare class BidsService {
             id: string;
             email: string;
         };
+        timeline: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        projectId: string;
+        providerId: string;
         proposal: string;
         price: number;
     }>;

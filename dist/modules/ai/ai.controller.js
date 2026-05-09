@@ -20,7 +20,6 @@ const scope_dto_1 = require("./dto/scope.dto");
 const proposal_dto_1 = require("./dto/proposal.dto");
 const report_review_dto_1 = require("./dto/report-review.dto");
 let AiController = class AiController {
-    ai;
     constructor(ai) {
         this.ai = ai;
     }

@@ -12,8 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.VdpAttachDto = void 0;
 const class_validator_1 = require("class-validator");
 class VdpAttachDto {
-    vdpSubmissionId;
-    contactEmail;
 }
 exports.VdpAttachDto = VdpAttachDto;
 __decorate([

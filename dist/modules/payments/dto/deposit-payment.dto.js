@@ -13,9 +13,9 @@ exports.DepositPaymentDto = void 0;
 const class_validator_1 = require("class-validator");
 const client_1 = require("@prisma/client");
 class DepositPaymentDto {
-    projectId;
-    amount;
-    currency = client_1.PaymentCurrency.INR;
+    constructor() {
+        this.currency = client_1.PaymentCurrency.INR;
+    }
 }
 exports.DepositPaymentDto = DepositPaymentDto;
 __decorate([

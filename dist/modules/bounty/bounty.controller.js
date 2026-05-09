@@ -24,7 +24,6 @@ const create_program_dto_1 = require("./dto/create-program.dto");
 const create_bug_report_dto_1 = require("./dto/create-bug-report.dto");
 const update_bug_report_status_dto_1 = require("./dto/update-bug-report-status.dto");
 let BountyController = class BountyController {
-    bounty;
     constructor(bounty) {
         this.bounty = bounty;
     }

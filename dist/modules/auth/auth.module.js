@@ -15,6 +15,10 @@ const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
 const jwt_strategy_1 = require("./jwt.strategy");
 const roles_guard_1 = require("../../auth/roles.guard");
+const google_strategy_1 = require("./google.strategy");
+const microsoft_strategy_1 = require("./microsoft.strategy");
+const facebook_strategy_1 = require("./facebook.strategy");
+const linkedin_strategy_1 = require("./linkedin.strategy");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -34,7 +38,15 @@ exports.AuthModule = AuthModule = __decorate([
             }),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, roles_guard_1.RolesGuard],
+        providers: [
+            auth_service_1.AuthService,
+            jwt_strategy_1.JwtStrategy,
+            roles_guard_1.RolesGuard,
+            google_strategy_1.GoogleStrategy,
+            microsoft_strategy_1.MicrosoftStrategy,
+            facebook_strategy_1.FacebookStrategy,
+            linkedin_strategy_1.LinkedInStrategy,
+        ],
         exports: [jwt_1.JwtModule, roles_guard_1.RolesGuard],
     })
 ], AuthModule);

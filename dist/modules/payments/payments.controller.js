@@ -23,7 +23,6 @@ const deposit_payment_dto_1 = require("./dto/deposit-payment.dto");
 const release_payment_dto_1 = require("./dto/release-payment.dto");
 const payments_service_1 = require("./payments.service");
 let PaymentsController = class PaymentsController {
-    payments;
     constructor(payments) {
         this.payments = payments;
     }

@@ -24,7 +24,6 @@ const vdp_attach_dto_1 = require("./dto/vdp-attach.dto");
 const MAX_BYTES = 5 * 1024 * 1024;
 const memoryUpload = (0, multer_1.memoryStorage)();
 let FilesController = class FilesController {
-    files;
     constructor(files) {
         this.files = files;
     }

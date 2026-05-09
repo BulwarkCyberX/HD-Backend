@@ -23,7 +23,6 @@ const create_vdp_dto_1 = require("./dto/create-vdp.dto");
 const vdp_report_dto_1 = require("./dto/vdp-report.dto");
 const vdp_service_1 = require("./vdp.service");
 let VdpController = class VdpController {
-    vdp;
     constructor(vdp) {
         this.vdp = vdp;
     }

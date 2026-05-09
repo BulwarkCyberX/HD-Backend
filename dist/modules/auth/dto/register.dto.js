@@ -13,20 +13,58 @@ exports.RegisterDto = void 0;
 const class_validator_1 = require("class-validator");
 const client_1 = require("@prisma/client");
 class RegisterDto {
-    email;
-    password;
-    role;
 }
 exports.RegisterDto = RegisterDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1),
+    (0, class_validator_1.MaxLength)(80),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "firstName", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1),
+    (0, class_validator_1.MaxLength)(80),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "lastName", void 0);
 __decorate([
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(8),
+    (0, class_validator_1.MinLength)(12),
+    (0, class_validator_1.MaxLength)(128),
+    (0, class_validator_1.Matches)(/[a-z]/, { message: 'Password must include a lowercase letter' }),
+    (0, class_validator_1.Matches)(/[A-Z]/, { message: 'Password must include an uppercase letter' }),
+    (0, class_validator_1.Matches)(/\d/, { message: 'Password must include a number' }),
+    (0, class_validator_1.Matches)(/[^\w\s]/, { message: 'Password must include a special character' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "password", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(2),
+    (0, class_validator_1.MaxLength)(2),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "country", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "city", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(2),
+    (0, class_validator_1.MaxLength)(16),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "postalCode", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(client_1.UserRole),

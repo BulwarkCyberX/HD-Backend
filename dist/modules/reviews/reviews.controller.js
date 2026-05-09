@@ -22,7 +22,6 @@ const roles_guard_1 = require("../../auth/roles.guard");
 const create_review_dto_1 = require("./dto/create-review.dto");
 const reviews_service_1 = require("./reviews.service");
 let ReviewsController = class ReviewsController {
-    reviews;
     constructor(reviews) {
         this.reviews = reviews;
     }

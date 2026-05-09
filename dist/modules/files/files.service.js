@@ -32,7 +32,6 @@ function uploadRoot() {
     return process.env.FILE_UPLOAD_DIR ?? (0, path_1.join)(process.cwd(), 'uploads');
 }
 let FilesService = class FilesService {
-    prisma;
     constructor(prisma) {
         this.prisma = prisma;
         const dir = uploadRoot();

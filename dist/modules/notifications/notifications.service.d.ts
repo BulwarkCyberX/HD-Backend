@@ -1,8 +1,11 @@
 import { NotificationType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationEmailService } from '../email/notification-email.service';
 export declare class NotificationsService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly notificationEmail;
+    private readonly logger;
+    constructor(prisma: PrismaService, notificationEmail: NotificationEmailService);
     create(input: {
         userId: string;
         type: NotificationType;
@@ -15,6 +18,7 @@ export declare class NotificationsService {
         userId: string;
         read: boolean;
     }>;
+    private trySendNotificationEmail;
     listForUser(userId: string): Promise<{
         message: string;
         id: string;
