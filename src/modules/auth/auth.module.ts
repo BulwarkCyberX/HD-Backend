@@ -6,11 +6,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { RolesGuard } from '../../auth/roles.guard';
-import { GoogleStrategy } from './google.strategy';
-import { MicrosoftStrategy } from './microsoft.strategy';
-import { FacebookStrategy } from './facebook.strategy';
-import { LinkedInStrategy } from './linkedin.strategy';
 import type { JwtSignOptions } from '@nestjs/jwt';
+import { oauthStrategyProviders } from './oauth-strategies.providers';
 
 @Module({
   imports: [
@@ -27,15 +24,7 @@ import type { JwtSignOptions } from '@nestjs/jwt';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    RolesGuard,
-    GoogleStrategy,
-    MicrosoftStrategy,
-    FacebookStrategy,
-    LinkedInStrategy,
-  ],
+  providers: [AuthService, JwtStrategy, RolesGuard, ...oauthStrategyProviders],
   exports: [JwtModule, RolesGuard],
 })
 export class AuthModule {}
