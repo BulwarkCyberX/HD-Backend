@@ -2,12 +2,14 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { NotificationType, ReportStatus, UserRole, type ReportSeverity } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DomainEventsService } from '../realtime/domain-events.service';
 
 @Injectable()
 export class ReportsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly events: DomainEventsService,
   ) {}
 
   private readonly reportSelect = {
@@ -83,6 +85,8 @@ export class ReportsService {
       type: NotificationType.REPORT_SUBMITTED,
       message: `New security report submitted on "${created.project.title}"`,
     });
+
+    this.events.reportUpdated({ projectId: input.projectId, report: created });
 
     return created;
   }
@@ -189,6 +193,8 @@ export class ReportsService {
         message: `Your workspace security report was marked VALID`,
       });
     }
+
+    this.events.reportUpdated({ projectId: updated.projectId, report: updated });
 
     return updated;
   }

@@ -3,6 +3,7 @@ import { BidStatus, NotificationType, ProjectStatus, UserRole } from '@prisma/cl
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TransactionalEmailService } from '../email/transactional-email.service';
+import { DomainEventsService } from '../realtime/domain-events.service';
 
 @Injectable()
 export class BidsService {
@@ -10,6 +11,7 @@ export class BidsService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly transactional: TransactionalEmailService,
+    private readonly events: DomainEventsService,
   ) {}
 
   private readonly bidSelect = {
@@ -88,6 +90,8 @@ export class BidsService {
       message: `New bid on project "${project.title}"`,
     });
 
+    this.events.bidUpdated({ projectId: input.projectId, bid: result });
+
     const providerUser = await this.prisma.user.findUnique({
       where: { id: input.providerId },
       select: { email: true, firstName: true },
@@ -161,11 +165,13 @@ export class BidsService {
     }
 
     if (input.status === 'REJECTED') {
-      return await this.prisma.bid.update({
+      const rejected = await this.prisma.bid.update({
         where: { id: input.bidId },
         data: { status: BidStatus.REJECTED },
         select: this.bidSelect,
       });
+      this.events.bidUpdated({ projectId: rejected.projectId, bid: rejected });
+      return rejected;
     }
 
     const updatedBid = await this.prisma.$transaction(async (tx) => {
@@ -205,6 +211,8 @@ export class BidsService {
       type: NotificationType.BID_ACCEPTED,
       message: `Your bid was accepted on "${projectTitle?.title ?? 'project'}"`,
     });
+
+    this.events.bidUpdated({ projectId: updatedBid.projectId, bid: updatedBid });
 
     return updatedBid;
   }

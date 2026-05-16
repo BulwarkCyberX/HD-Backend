@@ -21,6 +21,7 @@ const current_user_decorator_1 = require("../../auth/current-user.decorator");
 const files_service_1 = require("./files.service");
 const upload_attachment_dto_1 = require("./dto/upload-attachment.dto");
 const vdp_attach_dto_1 = require("./dto/vdp-attach.dto");
+const presign_upload_dto_1 = require("./dto/presign-upload.dto");
 const MAX_BYTES = 5 * 1024 * 1024;
 const memoryUpload = (0, multer_1.memoryStorage)();
 let FilesController = class FilesController {
@@ -66,6 +67,23 @@ let FilesController = class FilesController {
             contactEmail: body.contactEmail,
         });
     }
+    presignUpload(user, body) {
+        return this.files.presignUpload({
+            requesterId: user.userId,
+            role: user.role,
+            originalName: body.originalName,
+            mimeType: body.mimeType,
+            size: body.size,
+            projectId: body.projectId,
+            workspaceReportId: body.workspaceReportId,
+            bugReportId: body.bugReportId,
+            messageId: body.messageId,
+            vdpSubmissionId: body.vdpSubmissionId,
+        });
+    }
+    completePresign(user, id) {
+        return this.files.completePresignedUpload({ fileId: id, requesterId: user.userId });
+    }
     async getFile(id, user, res) {
         const row = await this.files.assertCanAccess({
             fileId: id,
@@ -107,6 +125,24 @@ __decorate([
     __metadata("design:paramtypes", [Object, vdp_attach_dto_1.VdpAttachDto]),
     __metadata("design:returntype", void 0)
 ], FilesController.prototype, "vdpPublicAttach", null);
+__decorate([
+    (0, common_1.Post)('presign-upload'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, presign_upload_dto_1.PresignUploadDto]),
+    __metadata("design:returntype", void 0)
+], FilesController.prototype, "presignUpload", null);
+__decorate([
+    (0, common_1.Post)(':id/complete-presign'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], FilesController.prototype, "completePresign", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

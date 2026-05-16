@@ -42,8 +42,8 @@ export declare class ProjectsController {
                 validReportCount: number;
                 reputationScore: number;
             } | null;
-            id: string;
             email: string;
+            id: string;
         } | null;
         clientId: string;
         selectedProviderId: string | null;
@@ -85,8 +85,8 @@ export declare class ProjectsController {
                 validReportCount: number;
                 reputationScore: number;
             } | null;
-            id: string;
             email: string;
+            id: string;
         } | null;
         clientId: string;
         selectedProviderId: string | null;
@@ -128,8 +128,8 @@ export declare class ProjectsController {
                 validReportCount: number;
                 reputationScore: number;
             } | null;
-            id: string;
             email: string;
+            id: string;
         } | null;
         clientId: string;
         selectedProviderId: string | null;
@@ -171,8 +171,8 @@ export declare class ProjectsController {
                 validReportCount: number;
                 reputationScore: number;
             } | null;
-            id: string;
             email: string;
+            id: string;
         } | null;
         clientId: string;
         selectedProviderId: string | null;

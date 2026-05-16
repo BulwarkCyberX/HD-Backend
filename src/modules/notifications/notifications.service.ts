@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NotificationType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationEmailService } from '../email/notification-email.service';
+import { DomainEventsService } from '../realtime/domain-events.service';
 
 @Injectable()
 export class NotificationsService {
@@ -10,12 +11,15 @@ export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationEmail: NotificationEmailService,
+    private readonly events: DomainEventsService,
   ) {}
 
   async create(input: { userId: string; type: NotificationType; message: string }) {
     const created = await this.prisma.notification.create({
       data: { userId: input.userId, type: input.type, message: input.message },
     });
+
+    this.events.notificationCreated({ userId: input.userId, notification: created });
 
     // Fire-and-forget email sending. Never block the main request on email delivery.
     void this.trySendNotificationEmail(input);

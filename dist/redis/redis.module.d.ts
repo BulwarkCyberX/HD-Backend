@@ -1,3 +1,3 @@
-export declare const REDIS_PLACEHOLDER = "REDIS_PLACEHOLDER";
+export declare const REDIS_CLIENT = "REDIS_CLIENT";
 export declare class RedisModule {
 }

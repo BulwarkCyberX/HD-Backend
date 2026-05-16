@@ -8,6 +8,7 @@ import { UserRole } from '@prisma/client';
 import type { JwtPayload } from '../../auth/auth.types';
 import type { OAuthProvider } from './oauth.types';
 import { TransactionalEmailService } from '../email/transactional-email.service';
+import { SessionService } from './session.service';
 
 const EMAIL_VERIFY_HOURS = 24;
 const PASSWORD_RESET_HOURS = 1;
@@ -34,6 +35,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly transactional: TransactionalEmailService,
+    private readonly sessions: SessionService,
   ) {}
 
   async register(input: {
@@ -321,10 +323,7 @@ export class AuthService {
       });
     }
 
-    return {
-      user: { id: user.id, email: user.email, role: user.role, entityId: user.entityId, createdAt: user.createdAt },
-      accessToken: await this.signAccessToken({ sub: user.id, role: user.role }),
-    };
+    return this.issueAuthResponse(user);
   }
 
   async requestLoginCode(input: { email: string }) {
@@ -400,10 +399,7 @@ export class AuthService {
       });
     }
 
-    return {
-      user: { id: user.id, email: user.email, role: user.role, entityId: user.entityId, createdAt: user.createdAt },
-      accessToken: await this.signAccessToken({ sub: user.id, role: user.role }),
-    };
+    return this.issueAuthResponse(user);
   }
 
   async loginWithOAuth(input: {
@@ -440,9 +436,65 @@ export class AuthService {
       });
     }
 
+    return this.issueAuthResponse(user);
+  }
+
+  async refreshSession(refreshToken: string) {
+    const refreshed = await this.sessions.refreshAccessToken(refreshToken);
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: refreshed.user.id },
+      select: { id: true, email: true, role: true, entityId: true, createdAt: true },
+    });
     return {
-      user: { id: user.id, email: user.email, role: user.role, entityId: user.entityId, createdAt: user.createdAt },
-      accessToken: await this.signAccessToken({ sub: user.id, role: user.role }),
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        entityId: user.entityId,
+        createdAt: user.createdAt,
+      },
+      accessToken: refreshed.accessToken,
+    };
+  }
+
+  async logout(refreshToken?: string) {
+    if (refreshToken) await this.sessions.revokeByRefreshToken(refreshToken);
+    return { ok: true as const };
+  }
+
+  listSessions(userId: string) {
+    return this.sessions.listSessions(userId);
+  }
+
+  revokeSession(userId: string, sessionId: string) {
+    return this.sessions.revokeSession(userId, sessionId);
+  }
+
+  revokeOtherSessions(userId: string, refreshToken: string) {
+    return this.sessions.revokeOtherSessions(userId, refreshToken);
+  }
+
+  private async issueAuthResponse(user: {
+    id: string;
+    email: string;
+    role: UserRole;
+    entityId: string | null;
+    createdAt: Date;
+  }) {
+    const tokens = await this.sessions.issueTokenPair({
+      userId: user.id,
+      role: user.role,
+    });
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        entityId: user.entityId,
+        createdAt: user.createdAt,
+      },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
     };
   }
 

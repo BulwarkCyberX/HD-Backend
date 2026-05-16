@@ -19,6 +19,7 @@ import { CurrentUser, type RequestUser } from '../../auth/current-user.decorator
 import { FilesService } from './files.service';
 import { UploadAttachmentDto } from './dto/upload-attachment.dto';
 import { VdpAttachDto } from './dto/vdp-attach.dto';
+import { PresignUploadDto } from './dto/presign-upload.dto';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const memoryUpload = memoryStorage();
@@ -88,6 +89,29 @@ export class FilesController {
       vdpSubmissionId: body.vdpSubmissionId,
       contactEmail: body.contactEmail,
     });
+  }
+
+  @Post('presign-upload')
+  @UseGuards(JwtAuthGuard)
+  presignUpload(@CurrentUser() user: RequestUser, @Body() body: PresignUploadDto) {
+    return this.files.presignUpload({
+      requesterId: user.userId,
+      role: user.role,
+      originalName: body.originalName,
+      mimeType: body.mimeType,
+      size: body.size,
+      projectId: body.projectId,
+      workspaceReportId: body.workspaceReportId,
+      bugReportId: body.bugReportId,
+      messageId: body.messageId,
+      vdpSubmissionId: body.vdpSubmissionId,
+    });
+  }
+
+  @Post(':id/complete-presign')
+  @UseGuards(JwtAuthGuard)
+  completePresign(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.files.completePresignedUpload({ fileId: id, requesterId: user.userId });
   }
 
   @Get(':id')

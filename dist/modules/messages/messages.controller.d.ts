@@ -6,6 +6,11 @@ export declare class MessagesController {
     constructor(messages: MessagesService);
     create(user: RequestUser, dto: CreateMessageDto): Promise<{
         message: string;
+        sender: {
+            email: string;
+            id: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        };
         id: string;
         createdAt: Date;
         files: {
@@ -16,15 +21,15 @@ export declare class MessagesController {
             size: number;
         }[];
         projectId: string;
-        sender: {
-            id: string;
-            email: string;
-            role: import(".prisma/client").$Enums.UserRole;
-        };
         senderId: string;
     }>;
     listByProject(user: RequestUser, projectId: string): Promise<{
         message: string;
+        sender: {
+            email: string;
+            id: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        };
         id: string;
         createdAt: Date;
         files: {
@@ -35,11 +40,6 @@ export declare class MessagesController {
             size: number;
         }[];
         projectId: string;
-        sender: {
-            id: string;
-            email: string;
-            role: import(".prisma/client").$Enums.UserRole;
-        };
         senderId: string;
     }[]>;
 }

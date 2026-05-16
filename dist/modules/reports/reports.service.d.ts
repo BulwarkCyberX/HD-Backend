@@ -1,10 +1,12 @@
 import { UserRole, type ReportSeverity } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DomainEventsService } from '../realtime/domain-events.service';
 export declare class ReportsService {
     private readonly prisma;
     private readonly notifications;
-    constructor(prisma: PrismaService, notifications: NotificationsService);
+    private readonly events;
+    constructor(prisma: PrismaService, notifications: NotificationsService, events: DomainEventsService);
     private readonly reportSelect;
     private assertProjectParticipant;
     create(input: {
@@ -36,13 +38,13 @@ export declare class ReportsService {
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
         submitter: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         };
         validator: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
         submittedBy: string;
@@ -75,13 +77,13 @@ export declare class ReportsService {
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
         submitter: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         };
         validator: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
         submittedBy: string;
@@ -112,13 +114,13 @@ export declare class ReportsService {
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
         submitter: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         };
         validator: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
         submittedBy: string;
@@ -153,13 +155,13 @@ export declare class ReportsService {
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
         submitter: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         };
         validator: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
         submittedBy: string;

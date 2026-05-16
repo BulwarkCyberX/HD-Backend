@@ -28,13 +28,13 @@ export declare class ReportsController {
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
         submitter: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         };
         validator: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
         submittedBy: string;
@@ -63,13 +63,13 @@ export declare class ReportsController {
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
         submitter: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         };
         validator: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
         submittedBy: string;
@@ -98,13 +98,13 @@ export declare class ReportsController {
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
         submitter: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         };
         validator: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
         submittedBy: string;
@@ -133,13 +133,13 @@ export declare class ReportsController {
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
         submitter: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         };
         validator: {
-            id: string;
             email: string;
+            id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
         submittedBy: string;

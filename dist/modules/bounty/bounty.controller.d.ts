@@ -9,33 +9,33 @@ export declare class BountyController {
     createProgram(user: RequestUser, dto: CreateProgramDto): Promise<{
         id: string;
         createdAt: Date;
+        scope: import("@prisma/client/runtime/library").JsonValue;
         title: string;
         description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
-        scope: import("@prisma/client/runtime/library").JsonValue;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
         allowedResearcherIds: string[];
     }>;
     listPrograms(user: RequestUser): Promise<{
         id: string;
         createdAt: Date;
+        scope: import("@prisma/client/runtime/library").JsonValue;
         title: string;
         description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
-        scope: import("@prisma/client/runtime/library").JsonValue;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
         allowedResearcherIds: string[];
     }[]>;
     getProgram(user: RequestUser, id: string): Promise<{
         id: string;
         createdAt: Date;
+        scope: import("@prisma/client/runtime/library").JsonValue;
         title: string;
         description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
-        scope: import("@prisma/client/runtime/library").JsonValue;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
         allowedResearcherIds: string[];
     }>;
@@ -54,8 +54,8 @@ export declare class BountyController {
         }[];
         severity: import(".prisma/client").$Enums.ReportSeverity;
         researcher: {
-            id: string;
             email: string;
+            id: string;
         };
         programId: string;
         researcherId: string;
@@ -75,8 +75,8 @@ export declare class BountyController {
         }[];
         severity: import(".prisma/client").$Enums.ReportSeverity;
         researcher: {
-            id: string;
             email: string;
+            id: string;
         };
         programId: string;
         researcherId: string;
@@ -96,8 +96,8 @@ export declare class BountyController {
         }[];
         severity: import(".prisma/client").$Enums.ReportSeverity;
         researcher: {
-            id: string;
             email: string;
+            id: string;
         };
         programId: string;
         researcherId: string;

@@ -14,10 +14,12 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
+const domain_events_service_1 = require("../realtime/domain-events.service");
 let ReportsService = class ReportsService {
-    constructor(prisma, notifications) {
+    constructor(prisma, notifications, events) {
         this.prisma = prisma;
         this.notifications = notifications;
+        this.events = events;
         this.reportSelect = {
             id: true,
             projectId: true,
@@ -83,6 +85,7 @@ let ReportsService = class ReportsService {
             type: client_1.NotificationType.REPORT_SUBMITTED,
             message: `New security report submitted on "${created.project.title}"`,
         });
+        this.events.reportUpdated({ projectId: input.projectId, report: created });
         return created;
     }
     async listByProject(input) {
@@ -170,6 +173,7 @@ let ReportsService = class ReportsService {
                 message: `Your workspace security report was marked VALID`,
             });
         }
+        this.events.reportUpdated({ projectId: updated.projectId, report: updated });
         return updated;
     }
 };
@@ -177,6 +181,7 @@ exports.ReportsService = ReportsService;
 exports.ReportsService = ReportsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        notifications_service_1.NotificationsService])
+        notifications_service_1.NotificationsService,
+        domain_events_service_1.DomainEventsService])
 ], ReportsService);
 //# sourceMappingURL=reports.service.js.map

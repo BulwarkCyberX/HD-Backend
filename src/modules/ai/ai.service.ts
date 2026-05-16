@@ -1,13 +1,157 @@
-import { Injectable } from '@nestjs/common';
-import { ReportSeverity } from '@prisma/client';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+  Inject,
+  Optional,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import OpenAI from 'openai';
+import { AiJobType, Prisma, ReportSeverity } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
+import { REDIS_CLIENT } from '../../redis/redis.module';
+import type Redis from 'ioredis';
 
-/**
- * Mock AI layer — replace internals with OpenAI or similar when keys are configured.
- * Outputs are advisory only; no automated decisions.
- */
+const DAILY_LIMIT = 80;
+
 @Injectable()
 export class AiService {
-  suggestScope(description: string) {
+  private readonly logger = new Logger(AiService.name);
+  private readonly client: OpenAI | null;
+
+  constructor(
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(REDIS_CLIENT) private readonly redis: Redis | undefined,
+  ) {
+    const key = this.config.get<string>('OPENAI_API_KEY');
+    this.client = key ? new OpenAI({ apiKey: key }) : null;
+  }
+
+  private async rateLimit(userId: string) {
+    if (!this.redis) return;
+    const day = new Date().toISOString().slice(0, 10);
+    const k = `ai:usage:${userId}:${day}`;
+    const n = await this.redis.incr(k);
+    if (n === 1) await this.redis.expire(k, 86400);
+    if (n > DAILY_LIMIT) {
+      throw new HttpException('AI daily limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
+    }
+  }
+
+  private async logUsage(userId: string, job: AiJobType, meta?: Record<string, unknown>) {
+    await this.prisma.aiUsageLog.create({
+      data: {
+        userId,
+        jobType: job,
+        metadata: meta ? (meta as Prisma.InputJsonValue) : undefined,
+      },
+    });
+  }
+
+  private async completeJson(
+    userId: string,
+    job: AiJobType,
+    system: string,
+    user: string,
+  ): Promise<Record<string, unknown>> {
+    if (!this.client) {
+      throw new ServiceUnavailableException('OPENAI_API_KEY is not configured');
+    }
+    const model = this.config.get<string>('OPENAI_MODEL') ?? 'gpt-4o-mini';
+    const res = await this.client.chat.completions.create({
+      model,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      response_format: { type: 'json_object' },
+    });
+    const text = res.choices[0]?.message?.content ?? '{}';
+    const usage = res.usage;
+    await this.logUsage(userId, job, {
+      tokensIn: usage?.prompt_tokens,
+      tokensOut: usage?.completion_tokens,
+    });
+    try {
+      return JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      this.logger.warn('AI returned non-JSON');
+      return { raw: text };
+    }
+  }
+
+  async suggestScope(description: string, userId: string) {
+    await this.rateLimit(userId);
+    if (!this.client) {
+      return this.mockScope(description);
+    }
+    const out = await this.completeJson(
+      userId,
+      AiJobType.SCOPE_REVIEW,
+      'You help define penetration-test scope. Reply JSON with keys: assets (array of {type,value}), inScope (string[]), outOfScope (string[]), testingWindow (string), notes (string).',
+      `Project description:\n${description}`,
+    );
+    return { suggestionsOnly: true, ...out };
+  }
+
+  async improveProposal(proposal: string, userId: string) {
+    await this.rateLimit(userId);
+    if (!this.client) {
+      return this.mockProposal(proposal);
+    }
+    const out = await this.completeJson(
+      userId,
+      AiJobType.PROPOSAL_ENHANCE,
+      'Improve security consulting proposals. JSON keys: improved (string), hints (string[]).',
+      proposal,
+    );
+    return { suggestionsOnly: true, ...out };
+  }
+
+  async reviewReport(input: { title: string; description: string; severity: ReportSeverity }, userId: string) {
+    await this.rateLimit(userId);
+    if (!this.client) {
+      return this.mockReview(input);
+    }
+    const out = await this.completeJson(
+      userId,
+      AiJobType.REPORT_ANALYSIS,
+      'Review vulnerability reports. JSON keys: completeness (string), missingFields (string[]), checklist (string[]).',
+      JSON.stringify(input),
+    );
+    return { suggestionsOnly: true, ...out };
+  }
+
+  async classifyRisk(input: { title: string; description: string }, userId: string) {
+    await this.rateLimit(userId);
+    if (!this.client) {
+      return { label: 'UNKNOWN', rationale: 'Configure OPENAI_API_KEY for live classification.' };
+    }
+    return this.completeJson(
+      userId,
+      AiJobType.RISK_CLASSIFICATION,
+      'Classify security risk. JSON keys: label (LOW|MEDIUM|HIGH|CRITICAL), rationale (string).',
+      JSON.stringify(input),
+    );
+  }
+
+  async duplicateHint(a: string, b: string, userId: string) {
+    await this.rateLimit(userId);
+    if (!this.client) {
+      return { likelyDuplicate: false, score: 0, note: 'Configure OPENAI_API_KEY for semantic duplicate hints.' };
+    }
+    return this.completeJson(
+      userId,
+      AiJobType.DUPLICATE_DETECTION,
+      'Compare two vulnerability descriptions. JSON keys: likelyDuplicate (boolean), score (0-1 number), rationale (string).',
+      JSON.stringify({ a, b }),
+    );
+  }
+
+  private mockScope(description: string) {
     const lower = description.toLowerCase();
     const assets: { type: string; value: string }[] = [];
     if (lower.includes('api')) assets.push({ type: 'URL', value: 'https://api.example.com' });
@@ -17,61 +161,34 @@ export class AiService {
     if (assets.length === 0) {
       assets.push({ type: 'DOMAIN', value: 'primary.target.example' });
     }
-
     return {
       suggestionsOnly: true,
       assets,
-      inScope: [
-        'Authenticated web application testing',
-        'Business-logic flaws in primary product surface',
-        'Documented API endpoints under agreed rate limits',
-      ],
-      outOfScope: [
-        'Physical security or social engineering',
-        'Third-party services not listed as in-scope assets',
-        'Denial-of-service testing without written approval',
-      ],
-      testingWindow: 'Suggest a 14-day coordinated testing window.',
-      notes:
-        'These scope suggestions are generated heuristically from your description. Review and edit before publishing.',
+      inScope: ['Authenticated web application testing'],
+      outOfScope: ['Physical security'],
+      testingWindow: '14-day coordinated window.',
+      notes: 'Heuristic mock (no OpenAI key).',
     };
   }
 
-  improveProposal(proposal: string) {
+  private mockProposal(proposal: string) {
     const trimmed = proposal.trim();
-    const additions = [
-      'Explicit testing methodology and tooling assumptions.',
-      'Deliverables (report format, severity mapping, retest policy).',
-      'Timeline milestones aligned with the client testing window.',
-    ];
-
     return {
       suggestionsOnly: true,
-      improved: `${trimmed}\n\n---\nSuggested additions:\n${additions.map((l) => `- ${l}`).join('\n')}`,
-      hints: additions,
+      improved: `${trimmed}\n\n---\nSuggested additions:\n- Methodology\n- Deliverables`,
+      hints: ['Methodology', 'Deliverables'],
     };
   }
 
-  reviewReport(input: { title: string; description: string; severity: ReportSeverity }) {
+  private mockReview(input: { title: string; description: string; severity: ReportSeverity }) {
     const missing: string[] = [];
-    if (input.title.length < 8) missing.push('Expand title with affected component or CVE class');
-    if (input.description.length < 80) missing.push('Add step-by-step reproduction and observed vs expected behavior');
-    if (!/impact|severity|risk/i.test(input.description)) {
-      missing.push('Clarify security impact in plain language');
-    }
-    if (input.severity === ReportSeverity.CRITICAL && input.description.length < 120) {
-      missing.push('Critical findings usually need detailed blast-radius analysis');
-    }
-
+    if (input.title.length < 8) missing.push('Expand title');
+    if (input.description.length < 80) missing.push('Add reproduction steps');
     return {
       suggestionsOnly: true,
-      completeness: missing.length === 0 ? 'Likely sufficient for triage' : 'Likely incomplete',
+      completeness: missing.length === 0 ? 'Likely sufficient' : 'Likely incomplete',
       missingFields: missing,
-      checklist: [
-        'Asset identifier included?',
-        'Reproduction reliable?',
-        'Impact on confidentiality / integrity / availability stated?',
-      ],
+      checklist: ['Asset?', 'Impact?'],
     };
   }
 }

@@ -14,16 +14,19 @@ exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notification_email_service_1 = require("../email/notification-email.service");
+const domain_events_service_1 = require("../realtime/domain-events.service");
 let NotificationsService = NotificationsService_1 = class NotificationsService {
-    constructor(prisma, notificationEmail) {
+    constructor(prisma, notificationEmail, events) {
         this.prisma = prisma;
         this.notificationEmail = notificationEmail;
+        this.events = events;
         this.logger = new common_1.Logger(NotificationsService_1.name);
     }
     async create(input) {
         const created = await this.prisma.notification.create({
             data: { userId: input.userId, type: input.type, message: input.message },
         });
+        this.events.notificationCreated({ userId: input.userId, notification: created });
         void this.trySendNotificationEmail(input);
         return created;
     }
@@ -70,6 +73,7 @@ exports.NotificationsService = NotificationsService;
 exports.NotificationsService = NotificationsService = NotificationsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        notification_email_service_1.NotificationEmailService])
+        notification_email_service_1.NotificationEmailService,
+        domain_events_service_1.DomainEventsService])
 ], NotificationsService);
 //# sourceMappingURL=notifications.service.js.map

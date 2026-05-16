@@ -6,10 +6,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RedisModule = exports.REDIS_PLACEHOLDER = void 0;
+exports.RedisModule = exports.REDIS_CLIENT = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
-exports.REDIS_PLACEHOLDER = 'REDIS_PLACEHOLDER';
+const ioredis_1 = require("ioredis");
+exports.REDIS_CLIENT = 'REDIS_CLIENT';
 let RedisModule = class RedisModule {
 };
 exports.RedisModule = RedisModule;
@@ -19,14 +20,15 @@ exports.RedisModule = RedisModule = __decorate([
         imports: [config_1.ConfigModule],
         providers: [
             {
-                provide: exports.REDIS_PLACEHOLDER,
-                useFactory: (config) => ({
-                    url: config.get('REDIS_URL') ?? 'redis://localhost:6379',
-                }),
+                provide: exports.REDIS_CLIENT,
+                useFactory: (config) => {
+                    const url = config.get('REDIS_URL') ?? 'redis://127.0.0.1:6379';
+                    return new ioredis_1.default(url, { maxRetriesPerRequest: null });
+                },
                 inject: [config_1.ConfigService],
             },
         ],
-        exports: [exports.REDIS_PLACEHOLDER],
+        exports: [exports.REDIS_CLIENT],
     })
 ], RedisModule);
 //# sourceMappingURL=redis.module.js.map

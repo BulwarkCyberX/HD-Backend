@@ -78,6 +78,28 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum PspProviderName {
+  RAZORPAY
+  STRIPE
+  MANUAL
+}
+
+enum PspCheckoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum KycStatus {
+  NOT_STARTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum BugBountyProgramStatus {
   DRAFT
   ACTIVE
@@ -98,6 +120,87 @@ enum NotificationType {
   REPORT_VALIDATED
   PAYMENT_RELEASED
   BUG_BOUNTY_REPORT_SUBMITTED
+}
+
+enum LedgerEntryType {
+  DEPOSIT
+  ESCROW_HOLD
+  ESCROW_RELEASE
+  REFUND
+  WITHDRAWAL
+  PLATFORM_FEE
+  MILESTONE_FUND
+  MILESTONE_RELEASE
+  MILESTONE_REJECT_REFUND
+}
+
+enum LedgerEntryStatus {
+  PENDING
+  POSTED
+  FAILED
+  REVERSED
+}
+
+enum MilestoneStatus {
+  PENDING
+  FUNDED
+  IN_PROGRESS
+  SUBMITTED
+  APPROVED
+  RELEASED
+  DISPUTED
+}
+
+enum WithdrawalRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum DisputeCategory {
+  PAYMENT
+  MILESTONE
+  REPORT_QUALITY
+  NON_DELIVERY
+  FRAUD
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  REFUNDED
+  REJECTED
+}
+
+enum OrganizationMemberRole {
+  OWNER
+  ADMIN
+  MANAGER
+  MEMBER
+}
+
+enum FileUploadStatus {
+  PENDING_UPLOAD
+  ACTIVE
+  FAILED
+}
+
+enum VirusScanStatus {
+  PENDING
+  CLEAN
+  INFECTED
+  SKIPPED
+  ERROR
+}
+
+enum AiJobType {
+  SCOPE_REVIEW
+  PROPOSAL_ENHANCE
+  REPORT_ANALYSIS
+  RISK_CLASSIFICATION
+  DUPLICATE_DETECTION
 }
 
 model User {
@@ -135,6 +238,24 @@ model User {
   notifications       Notification[]
   fileAssets          FileAsset[]
   vdpPrograms         VdpProgram[]
+
+  wallet                    UserWallet?
+  walletLedgerEntries       WalletLedgerEntry[] @relation("UserLedgerLines")
+  withdrawalRequests        WithdrawalRequest[]
+  reviewedWithdrawals       WithdrawalRequest[] @relation("WithdrawalReviewer")
+  milestoneComments         MilestoneComment[]
+  savedSearches             SavedSearch[]
+  disputesOpened            Dispute[]           @relation("DisputeOpenedBy")
+  disputeComments           DisputeComment[]
+  organizationMembers     OrganizationMember[]
+  aiUsageLogs               AiUsageLog[]
+  moderationAuditLogs       ModerationAuditLog[] @relation("ModerationActor")
+  fraudFlag                 FraudFlag?
+  pspCheckoutSessions       PspCheckoutSession[] @relation("PspCheckoutPayer")
+  kycSubmissions            KycSubmission[]
+  kycReviews                KycSubmission[]      @relation("KycReviewer")
+  userSessions              UserSession[]
+  paymentAuditLogs          PaymentAuditLog[]    @relation("PaymentAuditActor")
 
   emailVerifiedAt              DateTime?
   emailVerificationTokenHash   String?
@@ -174,8 +295,13 @@ model ProviderProfile {
   validReportCount Int     @default(0)
   reputationScore Float    @default(0)
   bidCredits      Int      @default(5)
+  bio             String   @default("")
+  portfolio       Json?
+  availabilityStatus String @default("AVAILABLE")
 
   createdAt       DateTime @default(now())
+
+  providerSkills ProviderSkill[]
 }
 
 model ClientProfile {
@@ -211,6 +337,11 @@ model Project {
   review   Review?
   payment  Payment?
   files    FileAsset[]
+  milestones ProjectMilestone[]
+  disputes   Dispute[]
+  projectSkills ProjectSkill[]
+  organizationLink OrganizationProject?
+  pspCheckoutSessions PspCheckoutSession[]
 
   status      ProjectStatus @default(DRAFT)
 
@@ -287,6 +418,8 @@ model Payment {
   currency  PaymentCurrency @default(INR)
   status    PaymentStatus   @default(PENDING)
   createdAt DateTime        @default(now())
+
+  pspCheckoutSession PspCheckoutSession?
 
   @@index([payerId])
   @@index([payeeId])
@@ -395,6 +528,13 @@ model FileAsset {
   vdpSubmissionId String?
   vdpSubmission   VdpSubmission? @relation(fields: [vdpSubmissionId], references: [id], onDelete: SetNull)
 
+  disputeEvidence DisputeEvidence?
+
+  storageProvider  String?
+  retentionPolicy  String?
+  virusScanStatus  VirusScanStatus @default(PENDING)
+  uploadStatus     FileUploadStatus @default(ACTIVE)
+
   createdAt DateTime @default(now())
 
   @@index([uploadedById])
@@ -430,4 +570,386 @@ model LoginCode {
   @@index([email])
   @@index([email, expiresAt])
   @@index([email, consumedAt])
+}
+
+// --- Financial infrastructure (ledger-backed) ---
+
+model PlatformWallet {
+  id                 String   @id @default(cuid())
+  availableBalance   Decimal  @default(0) @db.Decimal(18, 4)
+  pendingBalance     Decimal  @default(0) @db.Decimal(18, 4)
+  escrowBalance      Decimal  @default(0) @db.Decimal(18, 4)
+  lifetimeEarnings   Decimal  @default(0) @db.Decimal(18, 4)
+  totalSpent         Decimal  @default(0) @db.Decimal(18, 4)
+  currency           PaymentCurrency @default(INR)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  ledgerEntries WalletLedgerEntry[]
+}
+
+model UserWallet {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availableBalance   Decimal  @default(0) @db.Decimal(18, 4)
+  pendingBalance     Decimal  @default(0) @db.Decimal(18, 4)
+  escrowBalance      Decimal  @default(0) @db.Decimal(18, 4)
+  lifetimeEarnings   Decimal  @default(0) @db.Decimal(18, 4)
+  totalSpent         Decimal  @default(0) @db.Decimal(18, 4)
+  currency           PaymentCurrency @default(INR)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  ledgerEntries WalletLedgerEntry[]
+}
+
+model WalletLedgerEntry {
+  id               String            @id @default(cuid())
+  type             LedgerEntryType
+  amount           Decimal           @db.Decimal(18, 4)
+  currency         PaymentCurrency   @default(INR)
+  status           LedgerEntryStatus @default(POSTED)
+  /// External reference: projectId, milestoneId, withdrawalId, paymentId, etc.
+  referenceId      String
+  metadata         Json?
+  createdAt        DateTime          @default(now())
+
+  userWalletId     String?
+  userWallet       UserWallet?       @relation(fields: [userWalletId], references: [id], onDelete: SetNull)
+  platformWalletId String?
+  platformWallet   PlatformWallet?   @relation(fields: [platformWalletId], references: [id], onDelete: SetNull)
+
+  /// Optional link to the acting user (payer, admin) for audit
+  actorUserId      String?
+  actorUser        User?             @relation("UserLedgerLines", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([referenceId])
+  @@index([type, createdAt])
+  @@index([userWalletId])
+  @@index([platformWalletId])
+  @@index([actorUserId])
+}
+
+model PlatformFeeConfig {
+  id               String   @id @default(cuid())
+  clientFeeBps     Int      @default(0)
+  providerFeeBps   Int      @default(0)
+  effectiveFrom    DateTime @default(now())
+  effectiveTo      DateTime?
+  createdAt        DateTime @default(now())
+
+  @@index([effectiveFrom])
+}
+
+model WithdrawalRequest {
+  id             String                  @id @default(cuid())
+  userId         String
+  user           User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount         Decimal                 @db.Decimal(18, 4)
+  currency       PaymentCurrency         @default(INR)
+  status         WithdrawalRequestStatus @default(PENDING)
+  adminReviewerId String?
+  adminReviewer   User?                  @relation("WithdrawalReviewer", fields: [adminReviewerId], references: [id], onDelete: SetNull)
+  reviewedAt     DateTime?
+  metadata       Json?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model ProjectMilestone {
+  id              String          @id @default(cuid())
+  projectId       String
+  project         Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title           String
+  description     String          @default("")
+  sortOrder       Int             @default(0)
+  amount          Decimal         @db.Decimal(18, 4)
+  currency        PaymentCurrency @default(INR)
+  status          MilestoneStatus @default(PENDING)
+  partialPercent  Int?
+  releasedAmount  Decimal?        @db.Decimal(18, 4)
+  fundedAt        DateTime?
+  submittedAt     DateTime?
+  approvedAt      DateTime?
+  releasedAt      DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  comments MilestoneComment[]
+
+  @@index([projectId])
+  @@index([projectId, status])
+}
+
+model MilestoneComment {
+  id          String           @id @default(cuid())
+  milestoneId String
+  milestone   ProjectMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body        String
+  createdAt   DateTime         @default(now())
+
+  @@index([milestoneId])
+  @@index([authorId])
+}
+
+// --- Phase 3: Disputes ---
+
+model Dispute {
+  id          String          @id @default(cuid())
+  projectId   String
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  openedById  String
+  openedBy    User            @relation("DisputeOpenedBy", fields: [openedById], references: [id], onDelete: Cascade)
+  category    DisputeCategory
+  status      DisputeStatus   @default(OPEN)
+  title       String
+  description String          @default("")
+  resolution  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  evidence DisputeEvidence[]
+  comments DisputeComment[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([openedById])
+}
+
+model DisputeEvidence {
+  id         String   @id @default(cuid())
+  disputeId  String
+  dispute    Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  fileAssetId String  @unique
+  fileAsset  FileAsset @relation(fields: [fileAssetId], references: [id], onDelete: Cascade)
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([disputeId])
+}
+
+model DisputeComment {
+  id        String   @id @default(cuid())
+  disputeId String
+  dispute   Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  internal  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([disputeId])
+}
+
+// --- Phase 4: Search ---
+
+model Skill {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  label     String
+  createdAt DateTime @default(now())
+
+  providerLinks ProviderSkill[]
+  projectLinks  ProjectSkill[]
+}
+
+model ProviderSkill {
+  providerProfileId String
+  providerProfile   ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+  skillId           String
+  skill             Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([providerProfileId, skillId])
+  @@index([skillId])
+}
+
+model ProjectSkill {
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, skillId])
+  @@index([skillId])
+}
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  queryJson Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// --- Phase 7: AI usage ---
+
+model AiUsageLog {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobType   AiJobType
+  tokensIn  Int       @default(0)
+  tokensOut Int       @default(0)
+  metadata  Json?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([jobType])
+}
+
+// --- Phase 8: Trust / moderation ---
+
+model ModerationAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  actor      User     @relation("ModerationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  action     String
+  targetType String
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([actorId])
+}
+
+model FraudFlag {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score     Int      @default(0)
+  reasons   Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- Phase 11: Organizations ---
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members OrganizationMember[]
+  projects OrganizationProject[]
+}
+
+model OrganizationMember {
+  id             String                 @id @default(cuid())
+  organizationId String
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           OrganizationMemberRole @default(MEMBER)
+  createdAt      DateTime               @default(now())
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model OrganizationProject {
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projectId      String       @unique
+  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, projectId])
+}
+
+// --- Phase 1 launch: PSP, KYC, sessions, audit ---
+
+model PspCheckoutSession {
+  id                String            @id @default(cuid())
+  projectId         String
+  project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payerId           String
+  payer             User              @relation("PspCheckoutPayer", fields: [payerId], references: [id], onDelete: Cascade)
+  amount            Float
+  currency          PaymentCurrency   @default(INR)
+  provider          PspProviderName
+  status            PspCheckoutStatus @default(PENDING)
+  providerOrderId   String?
+  providerPaymentId String?
+  idempotencyKey    String            @unique
+  metadata          Json?
+  failureReason     String?
+  paidAt            DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  paymentId         String?           @unique
+  payment           Payment?          @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  auditLogs         PaymentAuditLog[]
+
+  @@index([projectId])
+  @@index([payerId])
+  @@index([status])
+  @@index([providerOrderId])
+  @@index([providerPaymentId])
+}
+
+model PaymentAuditLog {
+  id              String             @id @default(cuid())
+  sessionId       String?
+  session         PspCheckoutSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  eventType       String
+  provider        PspProviderName?
+  providerEventId String?            @unique
+  actorUserId     String?
+  actorUser       User?              @relation("PaymentAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  payload         Json?
+  createdAt       DateTime           @default(now())
+
+  @@index([sessionId])
+  @@index([eventType])
+}
+
+model KycSubmission {
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status             KycStatus @default(PENDING)
+  panNumberMasked    String?
+  panHolderName      String?
+  bankAccountLast4   String?
+  bankIfsc           String?
+  bankAccountHolder  String?
+  adminNotes         String?
+  reviewedById       String?
+  reviewedBy         User?     @relation("KycReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model UserSession {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String    @unique
+  userAgent        String?
+  ipAddress        String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  lastUsedAt       DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }

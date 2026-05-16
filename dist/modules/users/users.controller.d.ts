@@ -6,9 +6,9 @@ export declare class UsersController {
     me(user: RequestUser): Promise<{
         emailVerified: boolean;
         entity: {
+            name: string;
             id: string;
             createdAt: Date;
-            name: string;
             type: import(".prisma/client").$Enums.EntityType;
             verificationStatus: import(".prisma/client").$Enums.VerificationStatus;
         } | null;
@@ -31,8 +31,8 @@ export declare class UsersController {
             companySize: string | null;
             userId: string;
         } | null;
-        id: string;
         email: string;
+        id: string;
         role: import(".prisma/client").$Enums.UserRole;
         entityId: string | null;
         createdAt: Date;
@@ -46,15 +46,15 @@ export declare class UsersController {
             reputationScore: number;
             bidCredits: number;
         } | null;
-        id: string;
         email: string;
+        id: string;
         role: import(".prisma/client").$Enums.UserRole;
     }>;
     byId(requester: RequestUser, id: string): Promise<{
         entity: {
+            name: string;
             id: string;
             createdAt: Date;
-            name: string;
             type: import(".prisma/client").$Enums.EntityType;
             verificationStatus: import(".prisma/client").$Enums.VerificationStatus;
         } | null;
@@ -77,8 +77,8 @@ export declare class UsersController {
             companySize: string | null;
             userId: string;
         } | null;
-        id: string;
         email: string;
+        id: string;
         role: import(".prisma/client").$Enums.UserRole;
         entityId: string | null;
         createdAt: Date;

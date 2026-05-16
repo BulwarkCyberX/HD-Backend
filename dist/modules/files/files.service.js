@@ -16,6 +16,7 @@ const fs_1 = require("fs");
 const path_1 = require("path");
 const promises_1 = require("fs/promises");
 const prisma_service_1 = require("../../prisma/prisma.service");
+const object_storage_service_1 = require("../storage/object-storage.service");
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = new Set([
     'image/png',
@@ -32,8 +33,9 @@ function uploadRoot() {
     return process.env.FILE_UPLOAD_DIR ?? (0, path_1.join)(process.cwd(), 'uploads');
 }
 let FilesService = class FilesService {
-    constructor(prisma) {
+    constructor(prisma, objectStorage) {
         this.prisma = prisma;
+        this.objectStorage = objectStorage;
         const dir = uploadRoot();
         if (!(0, fs_1.existsSync)(dir)) {
             (0, fs_1.mkdirSync)(dir, { recursive: true });
@@ -328,10 +330,70 @@ let FilesService = class FilesService {
             vdpSubmissionId: input.vdpSubmissionId,
         });
     }
+    async presignUpload(input) {
+        if (!this.objectStorage.isRemoteEnabled()) {
+            throw new common_1.BadRequestException('Remote object storage is not configured; use POST /files/upload');
+        }
+        this.validateBuffer({ mimeType: input.mimeType, size: input.size });
+        await this.assertUploadPermission({
+            requesterId: input.requesterId,
+            role: input.role,
+            projectId: input.projectId,
+            workspaceReportId: input.workspaceReportId,
+            bugReportId: input.bugReportId,
+            messageId: input.messageId,
+            vdpSubmissionId: input.vdpSubmissionId,
+        });
+        const storageKey = this.objectStorage.makeObjectKey('uploads', input.originalName);
+        const driver = process.env.STORAGE_DRIVER ?? 's3';
+        const created = await this.prisma.fileAsset.create({
+            data: {
+                storageKey,
+                originalName: input.originalName,
+                mimeType: input.mimeType,
+                size: input.size,
+                uploadedById: input.requesterId,
+                projectId: input.projectId,
+                workspaceReportId: input.workspaceReportId,
+                bugReportId: input.bugReportId,
+                messageId: input.messageId,
+                vdpSubmissionId: input.vdpSubmissionId,
+                uploadStatus: client_1.FileUploadStatus.PENDING_UPLOAD,
+                storageProvider: driver,
+                virusScanStatus: client_1.VirusScanStatus.PENDING,
+            },
+            select: { id: true },
+        });
+        const uploadUrl = await this.objectStorage.presignPut(storageKey, input.mimeType);
+        return { fileId: created.id, uploadUrl, method: 'PUT' };
+    }
+    async completePresignedUpload(input) {
+        const row = await this.prisma.fileAsset.findUnique({
+            where: { id: input.fileId },
+            select: { id: true, uploadedById: true, uploadStatus: true },
+        });
+        if (!row)
+            throw new common_1.NotFoundException('File not found');
+        if (row.uploadedById !== input.requesterId) {
+            throw new common_1.ForbiddenException('You cannot complete this upload');
+        }
+        if (row.uploadStatus !== client_1.FileUploadStatus.PENDING_UPLOAD) {
+            throw new common_1.BadRequestException('File is not awaiting upload completion');
+        }
+        await this.prisma.fileAsset.update({
+            where: { id: input.fileId },
+            data: {
+                uploadStatus: client_1.FileUploadStatus.ACTIVE,
+                virusScanStatus: client_1.VirusScanStatus.SKIPPED,
+            },
+        });
+        return this.getMetadata(input.fileId);
+    }
 };
 exports.FilesService = FilesService;
 exports.FilesService = FilesService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        object_storage_service_1.ObjectStorageService])
 ], FilesService);
 //# sourceMappingURL=files.service.js.map

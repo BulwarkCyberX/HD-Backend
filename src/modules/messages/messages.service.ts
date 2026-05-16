@@ -1,9 +1,13 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DomainEventsService } from '../realtime/domain-events.service';
 
 @Injectable()
 export class MessagesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly events: DomainEventsService,
+  ) {}
 
   private async assertProjectParticipant(projectId: string, userId: string) {
     const project = await this.prisma.project.findUnique({
@@ -19,7 +23,7 @@ export class MessagesService {
 
   async create(input: { projectId: string; senderId: string; message: string }) {
     await this.assertProjectParticipant(input.projectId, input.senderId);
-    return await this.prisma.message.create({
+    const created = await this.prisma.message.create({
       data: {
         projectId: input.projectId,
         senderId: input.senderId,
@@ -43,6 +47,8 @@ export class MessagesService {
         },
       },
     });
+    this.events.messageCreated({ projectId: input.projectId, message: created });
+    return created;
   }
 
   async listByProject(input: { projectId: string; requesterId: string }) {

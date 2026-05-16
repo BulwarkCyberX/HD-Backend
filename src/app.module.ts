@@ -18,10 +18,29 @@ import { BountyModule } from './modules/bounty/bounty.module';
 import { VdpModule } from './modules/vdp/vdp.module';
 import { FilesModule } from './modules/files/files.module';
 import { AiModule } from './modules/ai/ai.module';
+import { WalletsModule } from './modules/wallets/wallets.module';
+import { MilestonesModule } from './modules/milestones/milestones.module';
+import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { RealtimeModule } from './modules/realtime/realtime.module';
+import { DisputesModule } from './modules/disputes/disputes.module';
+import { SearchModule } from './modules/search/search.module';
+import { QueuesModule } from './modules/queues/queues.module';
+import { HealthModule } from './modules/health/health.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { TrustModule } from './modules/trust/trust.module';
+import { PspModule } from './modules/psp/psp.module';
+import { KycModule } from './modules/kyc/kyc.module';
+import { PublicModule } from './modules/public/public.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    EventEmitterModule.forRoot({ wildcard: false, delimiter: '.' }),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 200 }]),
     PrismaModule,
     RedisModule,
     AuthModule,
@@ -38,8 +57,22 @@ import { AiModule } from './modules/ai/ai.module';
     VdpModule,
     FilesModule,
     AiModule,
+    WalletsModule,
+    MilestonesModule,
+    WithdrawalsModule,
+    RealtimeModule,
+    DisputesModule,
+    SearchModule,
+    QueuesModule,
+    HealthModule,
+    AnalyticsModule,
+    OrganizationsModule,
+    TrustModule,
+    PspModule,
+    KycModule,
+    PublicModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

@@ -1,11 +1,13 @@
 import { NotificationType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationEmailService } from '../email/notification-email.service';
+import { DomainEventsService } from '../realtime/domain-events.service';
 export declare class NotificationsService {
     private readonly prisma;
     private readonly notificationEmail;
+    private readonly events;
     private readonly logger;
-    constructor(prisma: PrismaService, notificationEmail: NotificationEmailService);
+    constructor(prisma: PrismaService, notificationEmail: NotificationEmailService, events: DomainEventsService);
     create(input: {
         userId: string;
         type: NotificationType;

@@ -4,11 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { FileUploadStatus, UserRole, VirusScanStatus } from '@prisma/client';
 import { createReadStream, mkdirSync, existsSync } from 'fs';
 import { join, posix } from 'path';
 import { writeFile } from 'fs/promises';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ObjectStorageService } from '../storage/object-storage.service';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -30,7 +31,10 @@ function uploadRoot() {
 
 @Injectable()
 export class FilesService {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly objectStorage: ObjectStorageService,
+  ) {
     const dir = uploadRoot();
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
@@ -371,5 +375,76 @@ export class FilesService {
       uploadedById: null,
       vdpSubmissionId: input.vdpSubmissionId,
     });
+  }
+
+  async presignUpload(input: {
+    requesterId: string;
+    role: UserRole;
+    originalName: string;
+    mimeType: string;
+    size: number;
+    projectId?: string;
+    workspaceReportId?: string;
+    bugReportId?: string;
+    messageId?: string;
+    vdpSubmissionId?: string;
+  }) {
+    if (!this.objectStorage.isRemoteEnabled()) {
+      throw new BadRequestException('Remote object storage is not configured; use POST /files/upload');
+    }
+    this.validateBuffer({ mimeType: input.mimeType, size: input.size });
+    await this.assertUploadPermission({
+      requesterId: input.requesterId,
+      role: input.role,
+      projectId: input.projectId,
+      workspaceReportId: input.workspaceReportId,
+      bugReportId: input.bugReportId,
+      messageId: input.messageId,
+      vdpSubmissionId: input.vdpSubmissionId,
+    });
+    const storageKey = this.objectStorage.makeObjectKey('uploads', input.originalName);
+    const driver = process.env.STORAGE_DRIVER ?? 's3';
+    const created = await this.prisma.fileAsset.create({
+      data: {
+        storageKey,
+        originalName: input.originalName,
+        mimeType: input.mimeType,
+        size: input.size,
+        uploadedById: input.requesterId,
+        projectId: input.projectId,
+        workspaceReportId: input.workspaceReportId,
+        bugReportId: input.bugReportId,
+        messageId: input.messageId,
+        vdpSubmissionId: input.vdpSubmissionId,
+        uploadStatus: FileUploadStatus.PENDING_UPLOAD,
+        storageProvider: driver,
+        virusScanStatus: VirusScanStatus.PENDING,
+      },
+      select: { id: true },
+    });
+    const uploadUrl = await this.objectStorage.presignPut(storageKey, input.mimeType);
+    return { fileId: created.id, uploadUrl, method: 'PUT' as const };
+  }
+
+  async completePresignedUpload(input: { fileId: string; requesterId: string }) {
+    const row = await this.prisma.fileAsset.findUnique({
+      where: { id: input.fileId },
+      select: { id: true, uploadedById: true, uploadStatus: true },
+    });
+    if (!row) throw new NotFoundException('File not found');
+    if (row.uploadedById !== input.requesterId) {
+      throw new ForbiddenException('You cannot complete this upload');
+    }
+    if (row.uploadStatus !== FileUploadStatus.PENDING_UPLOAD) {
+      throw new BadRequestException('File is not awaiting upload completion');
+    }
+    await this.prisma.fileAsset.update({
+      where: { id: input.fileId },
+      data: {
+        uploadStatus: FileUploadStatus.ACTIVE,
+        virusScanStatus: VirusScanStatus.SKIPPED,
+      },
+    });
+    return this.getMetadata(input.fileId);
   }
 }

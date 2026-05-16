@@ -1,7 +1,10 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { CurrentUser, type RequestUser } from '../../auth/current-user.decorator';
 import { AuthService } from './auth.service';
+import { clearAuthCookies, readRefreshCookie, setAuthCookies } from './auth-cookies';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RequestLoginCodeDto } from './dto/request-login-code.dto';
@@ -60,8 +63,68 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(@Body() dto: LoginDto) {
-    return this.auth.login(dto);
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const session = await this.auth.login(dto);
+    this.applyAuthCookies(req, res, session);
+    return session;
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body() body?: { refreshToken?: string }) {
+    const refreshToken = readRefreshCookie(req) ?? body?.refreshToken;
+    if (!refreshToken) {
+      return { message: 'Missing refresh token' };
+    }
+    const session = await this.auth.refreshSession(refreshToken);
+    setAuthCookies(res, { accessToken: session.accessToken, refreshToken }, this.cookieOpts(req));
+    return session;
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body() body?: { refreshToken?: string }) {
+    const refreshToken = readRefreshCookie(req) ?? body?.refreshToken;
+    await this.auth.logout(refreshToken);
+    clearAuthCookies(res);
+    return { ok: true };
+  }
+
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  sessions(@CurrentUser() user: RequestUser) {
+    return this.auth.listSessions(user.userId);
+  }
+
+  @Post('sessions/:id/revoke')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  revokeSession(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.auth.revokeSession(user.userId, id);
+  }
+
+  @Post('sessions/revoke-others')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  revokeOthers(@CurrentUser() user: RequestUser, @Req() req: Request, @Body() body?: { refreshToken?: string }) {
+    const refreshToken = readRefreshCookie(req) ?? body?.refreshToken;
+    if (!refreshToken) return { ok: false };
+    return this.auth.revokeOtherSessions(user.userId, refreshToken);
+  }
+
+  private applyAuthCookies(
+    req: Request,
+    res: Response,
+    session: { accessToken: string; refreshToken?: string },
+  ) {
+    if (session.refreshToken) {
+      setAuthCookies(res, { accessToken: session.accessToken, refreshToken: session.refreshToken }, this.cookieOpts(req));
+    }
+  }
+
+  private cookieOpts(req: Request) {
+    const secure = process.env.NODE_ENV === 'production' || req.secure;
+    return { secure, sameSite: 'lax' as const };
   }
 
   @Post('login/code/request')
@@ -72,8 +135,14 @@ export class AuthController {
 
   @Post('login/code/verify')
   @HttpCode(HttpStatus.OK)
-  verifyLoginCode(@Body() dto: VerifyLoginCodeDto) {
-    return this.auth.verifyLoginCode(dto);
+  async verifyLoginCode(
+    @Body() dto: VerifyLoginCodeDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const session = await this.auth.verifyLoginCode(dto);
+    this.applyAuthCookies(req, res, session);
+    return session;
   }
 
   @Get('oauth/google')

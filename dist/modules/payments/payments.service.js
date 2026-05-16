@@ -14,10 +14,14 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
+const wallet_service_1 = require("../wallets/wallet.service");
+const platform_fee_service_1 = require("../wallets/platform-fee.service");
 let PaymentsService = class PaymentsService {
-    constructor(prisma, notifications) {
+    constructor(prisma, notifications, wallets, platformFees) {
         this.prisma = prisma;
         this.notifications = notifications;
+        this.wallets = wallets;
+        this.platformFees = platformFees;
         this.paymentSelect = {
             id: true,
             projectId: true,
@@ -52,16 +56,30 @@ let PaymentsService = class PaymentsService {
         if (existing) {
             throw new common_1.BadRequestException('Payment already exists for this project');
         }
-        return await this.prisma.payment.create({
-            data: {
+        const amountDec = new client_1.Prisma.Decimal(String(input.amount));
+        return await this.prisma.$transaction(async (tx) => {
+            const created = await tx.payment.create({
+                data: {
+                    projectId: input.projectId,
+                    payerId: input.requesterId,
+                    payeeId: project.selectedProviderId,
+                    amount: input.amount,
+                    currency: input.currency,
+                    status: client_1.PaymentStatus.IN_ESCROW,
+                },
+                select: { id: true },
+            });
+            await this.wallets.recordProjectEscrowDepositTx(tx, {
+                clientUserId: input.requesterId,
                 projectId: input.projectId,
-                payerId: input.requesterId,
-                payeeId: project.selectedProviderId,
-                amount: input.amount,
+                amount: amountDec,
                 currency: input.currency,
-                status: client_1.PaymentStatus.IN_ESCROW,
-            },
-            select: this.paymentSelect,
+                actorUserId: input.requesterId,
+            });
+            return tx.payment.findUniqueOrThrow({
+                where: { id: created.id },
+                select: this.paymentSelect,
+            });
         });
     }
     async release(input) {
@@ -82,30 +100,63 @@ let PaymentsService = class PaymentsService {
         }
         const payment = await this.prisma.payment.findUnique({
             where: { projectId: input.projectId },
-            select: { id: true, status: true },
+            select: { id: true, status: true, amount: true, currency: true, payeeId: true, projectId: true },
         });
         if (!payment)
             throw new common_1.NotFoundException('Payment not found for project');
         if (payment.status !== client_1.PaymentStatus.IN_ESCROW) {
             throw new common_1.BadRequestException('Only escrowed payments can be released');
         }
-        const released = await this.prisma.payment.update({
-            where: { projectId: input.projectId },
-            data: { status: client_1.PaymentStatus.RELEASED },
-            select: this.paymentSelect,
+        const { clientFeeBps, providerFeeBps } = await this.platformFees.getActiveFeeBps();
+        const payAmt = new client_1.Prisma.Decimal(String(payment.amount));
+        const clientWallet = await this.prisma.userWallet.findUnique({
+            where: { userId: project.clientId },
+            select: { escrowBalance: true },
         });
-        await this.notifications.create({
-            userId: released.payeeId,
-            type: client_1.NotificationType.PAYMENT_RELEASED,
-            message: `Escrow payment released for project ${released.projectId}`,
+        const escrowBal = clientWallet?.escrowBalance ?? new client_1.Prisma.Decimal(0);
+        const gross = payAmt.lt(escrowBal) ? payAmt : escrowBal;
+        return await this.prisma.$transaction(async (tx) => {
+            const released = await tx.payment.update({
+                where: { projectId: input.projectId },
+                data: { status: client_1.PaymentStatus.RELEASED },
+                select: this.paymentSelect,
+            });
+            if (gross.gt(0)) {
+                const clientFee = gross.mul(clientFeeBps).div(10000);
+                const providerFee = gross.mul(providerFeeBps).div(10000);
+                const platformTotal = clientFee.add(providerFee);
+                const netToProvider = gross.sub(clientFee).sub(providerFee);
+                await this.wallets.recordEscrowReleaseAndFeesTx(tx, {
+                    clientUserId: project.clientId,
+                    providerUserId: payment.payeeId,
+                    projectId: payment.projectId,
+                    paymentId: payment.id,
+                    grossAmount: gross,
+                    currency: payment.currency,
+                    actorUserId: input.requesterId,
+                    clientFee,
+                    providerFee,
+                    platformTotal,
+                    netToProvider,
+                    clientFeeBps,
+                    providerFeeBps,
+                });
+            }
+            await this.notifications.create({
+                userId: released.payeeId,
+                type: client_1.NotificationType.PAYMENT_RELEASED,
+                message: `Escrow payment released for project ${released.projectId}`,
+            });
+            return released;
         });
-        return released;
     }
 };
 exports.PaymentsService = PaymentsService;
 exports.PaymentsService = PaymentsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        notifications_service_1.NotificationsService])
+        notifications_service_1.NotificationsService,
+        wallet_service_1.WalletService,
+        platform_fee_service_1.PlatformFeeService])
 ], PaymentsService);
 //# sourceMappingURL=payments.service.js.map

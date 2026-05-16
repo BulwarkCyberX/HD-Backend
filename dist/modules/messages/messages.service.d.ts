@@ -1,7 +1,9 @@
 import { PrismaService } from '../../prisma/prisma.service';
+import { DomainEventsService } from '../realtime/domain-events.service';
 export declare class MessagesService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly events;
+    constructor(prisma: PrismaService, events: DomainEventsService);
     private assertProjectParticipant;
     create(input: {
         projectId: string;
@@ -9,6 +11,11 @@ export declare class MessagesService {
         message: string;
     }): Promise<{
         message: string;
+        sender: {
+            email: string;
+            id: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        };
         id: string;
         createdAt: Date;
         files: {
@@ -19,11 +26,6 @@ export declare class MessagesService {
             size: number;
         }[];
         projectId: string;
-        sender: {
-            id: string;
-            email: string;
-            role: import(".prisma/client").$Enums.UserRole;
-        };
         senderId: string;
     }>;
     listByProject(input: {
@@ -31,6 +33,11 @@ export declare class MessagesService {
         requesterId: string;
     }): Promise<{
         message: string;
+        sender: {
+            email: string;
+            id: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        };
         id: string;
         createdAt: Date;
         files: {
@@ -41,11 +48,6 @@ export declare class MessagesService {
             size: number;
         }[];
         projectId: string;
-        sender: {
-            id: string;
-            email: string;
-            role: import(".prisma/client").$Enums.UserRole;
-        };
         senderId: string;
     }[]>;
 }

@@ -13,15 +13,22 @@ Feature modules (current):
 - `bids`: provider proposal workflow and client bid management
 - `messages`: participant-only workspace chat
 - `reports`: workspace report submission and retrieval
-- `payments`: mock escrow deposit and release flow
+- `payments`: escrow deposit/release orchestrated with `UserWallet` + immutable `WalletLedgerEntry`
+- `wallets`, `milestones`, `withdrawals`: financial UX and admin payout approval
+- `realtime`: Socket.IO `/workspace` gateway + `DomainEventsService` (Nest EventEmitter)
+- `disputes`, `search`, `analytics`, `organizations`, `trust`: marketplace expansion surfaces
+- `queues`: BullMQ queue registration against Redis (extend with processors/workers as needed)
+- `health`: `GET /health`, `GET /health/ready` (Terminus + Prisma)
+- **OpenAPI**: Swagger UI at **`GET /docs`** (non-production friendly; tighten for public deployments)
+- **Throttling**: global `@nestjs/throttler` guard (tune exemptions for health if required)
 - `reviews`: client feedback and provider reputation updates
 - `notifications`: user notifications for key platform events
 - `bounty`: private bug bounty programs and researcher submissions
 - `vdp`: vulnerability disclosure programs and public reporting
-- `files`: multipart uploads and authorized binary download
-- `ai`: advisory helpers (mock; swap for OpenAI later)
+- `files`: multipart uploads, authorized binary download, optional **S3-compatible presign** (`POST /files/presign-upload`, `POST /files/:id/complete-presign`) when `STORAGE_DRIVER` is not `local`
+- `ai`: advisory helpers — uses **OpenAI** when `OPENAI_API_KEY` is set (JSON-mode calls), with **Redis-backed daily usage** and `AiUsageLog` persistence; deterministic fallbacks when the key is absent
 - `prisma`: DB client lifecycle
-- `redis`: placeholder module for future caching/queue
+- `redis`: `ioredis` client (`REDIS_CLIENT`) for Socket.IO typing/presence keys, AI rate limits, and BullMQ
 
 ## Auth System Overview
 
@@ -40,8 +47,9 @@ Feature modules (current):
 
 - Provider: PostgreSQL
 - Schema path: `prisma/schema.prisma`
-- Migration path: `prisma/migrations/*`
+- Migration path: `prisma/migrations/*` (includes enterprise tables: wallets, ledger, milestones, withdrawals, disputes, skills/search helpers, orgs, AI usage, etc.)
 - Prisma service initialized in `PrismaModule`
+- **Seed:** `npm run db:seed --workspace @hackersdeal/api` (if configured) ensures a **platform wallet** and default fee config where applicable — see `prisma/seed.js`
 
 Useful commands:
 
@@ -80,13 +88,23 @@ Base routes:
 - `POST|GET /bounty/*` — private programs and bounty submissions (JWT, role checks per route)
 - `POST /vdp` (CLIENT), `GET /vdp/:id` (public), `POST /vdp/report` (public)
 - `POST /files/upload` (JWT), `POST /files/vdp-attach` (public multipart), `GET /files/:id` (JWT stream)
+- `POST /files/presign-upload`, `POST /files/:id/complete-presign` (JWT) — when using S3/R2/MinIO-style storage
 - `GET /notifications`, `PATCH /notifications/:id/read` (JWT)
-- `POST /ai/scope`, `POST /ai/proposal`, `POST /ai/report-review` (JWT)
+- `POST /ai/scope`, `POST /ai/proposal`, `POST /ai/report-review` (JWT); additional routes such as risk / duplicate hints may exist — see **`docs/api.md`**
+- **Wallets:** `GET /wallets/me` (JWT)
+- **Milestones:** `GET /milestones/project/:projectId`, `POST /milestones`, `PATCH /milestones/:id`, `DELETE /milestones/:id`, lifecycle `POST /milestones/:id/fund|start|submit|approve|release|reject`, comments `GET|POST /milestones/:id/comments` (JWT; participant rules enforced in service)
+- **Withdrawals:** `POST /withdrawals`, `GET /withdrawals/me`; admin: `GET /withdrawals/admin/pending`, `PATCH /withdrawals/admin/:id/approve|reject` (ADMIN)
+- **Realtime:** Socket.IO namespace **`/workspace`** (JWT on connection); not listed above as HTTP — see **`docs/architecture.md`**
+- Disputes, search, analytics, organizations, trust, and other expansion routes are documented in **`docs/api.md`**
 
 Environment:
 
 - `FILE_UPLOAD_DIR` — optional directory for local uploads (defaults to `./uploads`)
 - `PUBLIC_API_URL` — optional absolute API origin used in generated file URLs (defaults to first `WEB_ORIGIN` or `http://localhost:4000`)
+- **`REDIS_URL`** — Redis connection string (used for Socket.IO presence/typing, AI usage counters, BullMQ). Local stack: `docker-compose.yml` at repo root exposes `redis://localhost:6379`.
+- **`PLATFORM_WALLET_ID`** — optional; seed creates a platform wallet row (default id `platform_wallet_main` in `prisma/seed.js`) for ledger operations.
+- **Object storage (optional):** `STORAGE_DRIVER` (`local` default), `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` — same SDK works for AWS S3, Cloudflare R2, MinIO, etc.
+- **OpenAI (optional):** `OPENAI_API_KEY`, `OPENAI_MODEL` (e.g. `gpt-4o-mini`) — see `env.json` for placeholders.
 - **Mail (notifications, login OTP, etc.)** — one stack, env-driven:
   - `MAIL_PROVIDER` — `auto` (default), `smtp`, or `sendgrid`. `auto` uses Gmail SMTP if `GMAIL_SMTP_USER` + `GMAIL_SMTP_APP_PASSWORD` are set, otherwise SendGrid if `SENDGRID_API_KEY` is set.
   - `MAIL_FROM_ADDRESS` — From address (e.g. `hdteam@yourdomain.com`). Falls back to `SENDGRID_FROM_EMAIL` if unset.
@@ -164,6 +182,7 @@ Project creation accepts structured fields:
 - deposit requires selected provider assignment
 - release requires project status `COMPLETED`
 - release moves payment status from `IN_ESCROW` to `RELEASED`
+- **Ledger:** deposits and releases also post **`WalletLedgerEntry`** rows and update **`UserWallet`** / **`PlatformWallet`** aggregates inside Prisma transactions (see `modules/wallets`, `modules/payments`). Milestone fund/release flows attach ledger entries with milestone references.
 
 ## Run Commands
 

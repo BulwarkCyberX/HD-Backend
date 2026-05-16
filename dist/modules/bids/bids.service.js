@@ -15,11 +15,13 @@ const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const transactional_email_service_1 = require("../email/transactional-email.service");
+const domain_events_service_1 = require("../realtime/domain-events.service");
 let BidsService = class BidsService {
-    constructor(prisma, notifications, transactional) {
+    constructor(prisma, notifications, transactional, events) {
         this.prisma = prisma;
         this.notifications = notifications;
         this.transactional = transactional;
+        this.events = events;
         this.bidSelect = {
             id: true,
             projectId: true,
@@ -87,6 +89,7 @@ let BidsService = class BidsService {
             type: client_1.NotificationType.NEW_BID,
             message: `New bid on project "${project.title}"`,
         });
+        this.events.bidUpdated({ projectId: input.projectId, bid: result });
         const providerUser = await this.prisma.user.findUnique({
             where: { id: input.providerId },
             select: { email: true, firstName: true },
@@ -149,11 +152,13 @@ let BidsService = class BidsService {
             throw new common_1.ForbiddenException('Only project owner can manage bid status');
         }
         if (input.status === 'REJECTED') {
-            return await this.prisma.bid.update({
+            const rejected = await this.prisma.bid.update({
                 where: { id: input.bidId },
                 data: { status: client_1.BidStatus.REJECTED },
                 select: this.bidSelect,
             });
+            this.events.bidUpdated({ projectId: rejected.projectId, bid: rejected });
+            return rejected;
         }
         const updatedBid = await this.prisma.$transaction(async (tx) => {
             const row = await tx.bid.update({
@@ -187,6 +192,7 @@ let BidsService = class BidsService {
             type: client_1.NotificationType.BID_ACCEPTED,
             message: `Your bid was accepted on "${projectTitle?.title ?? 'project'}"`,
         });
+        this.events.bidUpdated({ projectId: updatedBid.projectId, bid: updatedBid });
         return updatedBid;
     }
 };
@@ -195,6 +201,7 @@ exports.BidsService = BidsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notifications_service_1.NotificationsService,
-        transactional_email_service_1.TransactionalEmailService])
+        transactional_email_service_1.TransactionalEmailService,
+        domain_events_service_1.DomainEventsService])
 ], BidsService);
 //# sourceMappingURL=bids.service.js.map

@@ -12,9 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessagesService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
+const domain_events_service_1 = require("../realtime/domain-events.service");
 let MessagesService = class MessagesService {
-    constructor(prisma) {
+    constructor(prisma, events) {
         this.prisma = prisma;
+        this.events = events;
     }
     async assertProjectParticipant(projectId, userId) {
         const project = await this.prisma.project.findUnique({
@@ -30,7 +32,7 @@ let MessagesService = class MessagesService {
     }
     async create(input) {
         await this.assertProjectParticipant(input.projectId, input.senderId);
-        return await this.prisma.message.create({
+        const created = await this.prisma.message.create({
             data: {
                 projectId: input.projectId,
                 senderId: input.senderId,
@@ -54,6 +56,8 @@ let MessagesService = class MessagesService {
                 },
             },
         });
+        this.events.messageCreated({ projectId: input.projectId, message: created });
+        return created;
     }
     async listByProject(input) {
         await this.assertProjectParticipant(input.projectId, input.requesterId);
@@ -83,6 +87,7 @@ let MessagesService = class MessagesService {
 exports.MessagesService = MessagesService;
 exports.MessagesService = MessagesService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        domain_events_service_1.DomainEventsService])
 ], MessagesService);
 //# sourceMappingURL=messages.service.js.map
