@@ -29,4 +29,8 @@ export function readRefreshCookie(req: { cookies?: Record<string, string> }): st
   return req.cookies?.[REFRESH_COOKIE];
 }
 
+export function readAccessCookie(req: { cookies?: Record<string, string> }): string | undefined {
+  return req.cookies?.[ACCESS_COOKIE];
+}
+
 export { ACCESS_COOKIE, REFRESH_COOKIE };

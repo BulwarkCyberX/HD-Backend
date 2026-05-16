@@ -113,6 +113,69 @@ let ReviewsService = class ReviewsService {
             return created;
         });
     }
+    async createClientReview(input) {
+        if (input.role !== client_1.UserRole.PROVIDER) {
+            throw new common_1.ForbiddenException('Only providers can review clients');
+        }
+        const project = await this.prisma.project.findUnique({
+            where: { id: input.projectId },
+            select: {
+                id: true,
+                clientId: true,
+                selectedProviderId: true,
+                status: true,
+            },
+        });
+        if (!project)
+            throw new common_1.NotFoundException('Project not found');
+        if (project.selectedProviderId !== input.requesterId) {
+            throw new common_1.ForbiddenException('Only the assigned provider can review the client');
+        }
+        if (project.status !== client_1.ProjectStatus.COMPLETED) {
+            throw new common_1.BadRequestException('Review can be submitted only after project completion');
+        }
+        const existing = await this.prisma.clientReview.findUnique({
+            where: { projectId: input.projectId },
+            select: { id: true },
+        });
+        if (existing) {
+            throw new common_1.BadRequestException('You already reviewed this client for this project');
+        }
+        return await this.prisma.$transaction(async (tx) => {
+            const created = await tx.clientReview.create({
+                data: {
+                    projectId: input.projectId,
+                    providerId: input.requesterId,
+                    clientId: project.clientId,
+                    rating: input.rating,
+                    comment: input.comment,
+                },
+                select: {
+                    id: true,
+                    projectId: true,
+                    clientId: true,
+                    providerId: true,
+                    rating: true,
+                    comment: true,
+                    createdAt: true,
+                },
+            });
+            const ratings = await tx.clientReview.findMany({
+                where: { clientId: project.clientId },
+                select: { rating: true },
+            });
+            const totalReviews = ratings.length;
+            const averageRating = totalReviews === 0
+                ? 0
+                : ratings.reduce((acc, row) => acc + row.rating, 0) / totalReviews;
+            await tx.clientProfile.upsert({
+                where: { userId: project.clientId },
+                create: { userId: project.clientId, rating: averageRating, totalReviews },
+                update: { rating: averageRating, totalReviews },
+            });
+            return created;
+        });
+    }
 };
 exports.ReviewsService = ReviewsService;
 exports.ReviewsService = ReviewsService = __decorate([

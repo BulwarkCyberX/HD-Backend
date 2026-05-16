@@ -5,8 +5,10 @@ import {
   Prisma,
   ProjectStatus,
   UserRole,
+  WebhookEventType,
   type PaymentCurrency,
 } from '@prisma/client';
+import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WalletService } from '../wallets/wallet.service';
@@ -19,6 +21,7 @@ export class PaymentsService {
     private readonly notifications: NotificationsService,
     private readonly wallets: WalletService,
     private readonly platformFees: PlatformFeeService,
+    private readonly webhooks: WebhookDispatcherService,
   ) {}
 
   private readonly paymentSelect = {
@@ -153,8 +156,8 @@ export class PaymentsService {
     const escrowBal = clientWallet?.escrowBalance ?? new Prisma.Decimal(0);
     const gross = payAmt.lt(escrowBal) ? payAmt : escrowBal;
 
-    return await this.prisma.$transaction(async (tx) => {
-      const released = await tx.payment.update({
+    const released = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.payment.update({
         where: { projectId: input.projectId },
         data: { status: PaymentStatus.RELEASED },
         select: this.paymentSelect,
@@ -183,12 +186,29 @@ export class PaymentsService {
       }
 
       await this.notifications.create({
-        userId: released.payeeId,
+        userId: row.payeeId,
         type: NotificationType.PAYMENT_RELEASED,
-        message: `Escrow payment released for project ${released.projectId}`,
+        message: `Escrow payment released for project ${row.projectId}`,
       });
 
-      return released;
+      return row;
     });
+
+    void this.webhooks.dispatch(project.clientId, WebhookEventType.PAYMENT_RELEASED, {
+      projectId: released.projectId,
+      paymentId: released.id,
+      amount: released.amount,
+      currency: released.currency,
+    });
+    if (released.payeeId) {
+      void this.webhooks.dispatch(released.payeeId, WebhookEventType.PAYMENT_RELEASED, {
+        projectId: released.projectId,
+        paymentId: released.id,
+        amount: released.amount,
+        currency: released.currency,
+      });
+    }
+
+    return released;
   }
 }

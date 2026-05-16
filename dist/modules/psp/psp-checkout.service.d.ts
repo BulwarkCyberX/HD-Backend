@@ -33,15 +33,15 @@ export declare class PspCheckoutService {
         signature: string;
     }): Promise<{
         session: {
+            amount: number;
             id: string;
             createdAt: Date;
+            updatedAt: Date;
             provider: import(".prisma/client").$Enums.PspProviderName;
             status: import(".prisma/client").$Enums.PspCheckoutStatus;
             projectId: string;
             payerId: string;
-            amount: number;
             currency: import(".prisma/client").$Enums.PaymentCurrency;
-            updatedAt: Date;
             metadata: Prisma.JsonValue | null;
             paymentId: string | null;
             providerOrderId: string | null;
@@ -51,13 +51,13 @@ export declare class PspCheckoutService {
             paidAt: Date | null;
         };
         payment: {
+            amount: number;
             id: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.PaymentStatus;
             projectId: string;
             payerId: string;
             payeeId: string;
-            amount: number;
             currency: import(".prisma/client").$Enums.PaymentCurrency;
         } | null;
     }>;
@@ -73,12 +73,12 @@ export declare class PspCheckoutService {
             id: string;
             status: import(".prisma/client").$Enums.PaymentStatus;
         } | null;
+        amount: number;
         id: string;
         createdAt: Date;
         provider: import(".prisma/client").$Enums.PspProviderName;
         status: import(".prisma/client").$Enums.PspCheckoutStatus;
         projectId: string;
-        amount: number;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
         providerOrderId: string | null;
         providerPaymentId: string | null;

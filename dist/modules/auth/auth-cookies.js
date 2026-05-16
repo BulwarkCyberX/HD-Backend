@@ -4,6 +4,7 @@ exports.REFRESH_COOKIE = exports.ACCESS_COOKIE = void 0;
 exports.setAuthCookies = setAuthCookies;
 exports.clearAuthCookies = clearAuthCookies;
 exports.readRefreshCookie = readRefreshCookie;
+exports.readAccessCookie = readAccessCookie;
 const REFRESH_COOKIE = 'hd_refresh';
 exports.REFRESH_COOKIE = REFRESH_COOKIE;
 const ACCESS_COOKIE = 'hd_access';
@@ -26,5 +27,8 @@ function clearAuthCookies(res) {
 }
 function readRefreshCookie(req) {
     return req.cookies?.[REFRESH_COOKIE];
+}
+function readAccessCookie(req) {
+    return req.cookies?.[ACCESS_COOKIE];
 }
 //# sourceMappingURL=auth-cookies.js.map

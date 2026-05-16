@@ -13,9 +13,9 @@ export declare class ReportsController {
             selectedProviderId: string | null;
         };
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         status: import(".prisma/client").$Enums.ReportStatus;
         files: {
             id: string;
@@ -25,8 +25,11 @@ export declare class ReportsController {
             size: number;
         }[];
         projectId: string;
+        submittedBy: string;
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
+        aiTriageHints: import("@prisma/client/runtime/library").JsonValue;
+        validatedBy: string | null;
         submitter: {
             email: string;
             id: string;
@@ -37,8 +40,6 @@ export declare class ReportsController {
             id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
-        submittedBy: string;
-        validatedBy: string | null;
     }>;
     listAllForAdmin(user: RequestUser): Promise<{
         project: {
@@ -48,9 +49,9 @@ export declare class ReportsController {
             selectedProviderId: string | null;
         };
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         status: import(".prisma/client").$Enums.ReportStatus;
         files: {
             id: string;
@@ -60,8 +61,11 @@ export declare class ReportsController {
             size: number;
         }[];
         projectId: string;
+        submittedBy: string;
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
+        aiTriageHints: import("@prisma/client/runtime/library").JsonValue;
+        validatedBy: string | null;
         submitter: {
             email: string;
             id: string;
@@ -72,9 +76,43 @@ export declare class ReportsController {
             id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
-        submittedBy: string;
-        validatedBy: string | null;
     }[]>;
+    runAiTriage(user: RequestUser, id: string): Promise<{
+        project: {
+            id: string;
+            title: string;
+            clientId: string;
+            selectedProviderId: string | null;
+        };
+        id: string;
+        description: string;
+        title: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.ReportStatus;
+        files: {
+            id: string;
+            createdAt: Date;
+            originalName: string;
+            mimeType: string;
+            size: number;
+        }[];
+        projectId: string;
+        submittedBy: string;
+        severity: import(".prisma/client").$Enums.ReportSeverity;
+        triageNotes: string | null;
+        aiTriageHints: import("@prisma/client/runtime/library").JsonValue;
+        validatedBy: string | null;
+        submitter: {
+            email: string;
+            id: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        };
+        validator: {
+            email: string;
+            id: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        } | null;
+    } | null>;
     listByProject(user: RequestUser, projectId: string): Promise<{
         project: {
             id: string;
@@ -83,9 +121,9 @@ export declare class ReportsController {
             selectedProviderId: string | null;
         };
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         status: import(".prisma/client").$Enums.ReportStatus;
         files: {
             id: string;
@@ -95,8 +133,11 @@ export declare class ReportsController {
             size: number;
         }[];
         projectId: string;
+        submittedBy: string;
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
+        aiTriageHints: import("@prisma/client/runtime/library").JsonValue;
+        validatedBy: string | null;
         submitter: {
             email: string;
             id: string;
@@ -107,8 +148,6 @@ export declare class ReportsController {
             id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
-        submittedBy: string;
-        validatedBy: string | null;
     }[]>;
     triage(user: RequestUser, id: string, dto: TriageReportDto): Promise<{
         project: {
@@ -118,9 +157,9 @@ export declare class ReportsController {
             selectedProviderId: string | null;
         };
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         status: import(".prisma/client").$Enums.ReportStatus;
         files: {
             id: string;
@@ -130,8 +169,11 @@ export declare class ReportsController {
             size: number;
         }[];
         projectId: string;
+        submittedBy: string;
         severity: import(".prisma/client").$Enums.ReportSeverity;
         triageNotes: string | null;
+        aiTriageHints: import("@prisma/client/runtime/library").JsonValue;
+        validatedBy: string | null;
         submitter: {
             email: string;
             id: string;
@@ -142,7 +184,5 @@ export declare class ReportsController {
             id: string;
             role: import(".prisma/client").$Enums.UserRole;
         } | null;
-        submittedBy: string;
-        validatedBy: string | null;
     }>;
 }

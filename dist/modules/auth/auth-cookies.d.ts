@@ -12,4 +12,7 @@ export declare function clearAuthCookies(res: Response): void;
 export declare function readRefreshCookie(req: {
     cookies?: Record<string, string>;
 }): string | undefined;
+export declare function readAccessCookie(req: {
+    cookies?: Record<string, string>;
+}): string | undefined;
 export { ACCESS_COOKIE, REFRESH_COOKIE };

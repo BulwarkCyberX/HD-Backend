@@ -1,4 +1,5 @@
 import { Prisma, UserRole, type PaymentCurrency } from '@prisma/client';
+import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { WalletService } from '../wallets/wallet.service';
 import { DomainEventsService } from '../realtime/domain-events.service';
@@ -6,22 +7,23 @@ export declare class MilestonesService {
     private readonly prisma;
     private readonly wallets;
     private readonly events;
-    constructor(prisma: PrismaService, wallets: WalletService, events: DomainEventsService);
+    private readonly webhooks;
+    constructor(prisma: PrismaService, wallets: WalletService, events: DomainEventsService, webhooks: WebhookDispatcherService);
     private readonly select;
     listByProject(input: {
         projectId: string;
         requesterId: string;
         role: UserRole;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: Prisma.Decimal | null;
@@ -40,15 +42,15 @@ export declare class MilestonesService {
         currency: PaymentCurrency;
         sortOrder: number;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: Prisma.Decimal | null;
@@ -66,15 +68,15 @@ export declare class MilestonesService {
         amount?: number;
         currency?: PaymentCurrency;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: Prisma.Decimal | null;
@@ -95,15 +97,15 @@ export declare class MilestonesService {
         role: UserRole;
         milestoneId: string;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: Prisma.Decimal | null;
@@ -117,15 +119,15 @@ export declare class MilestonesService {
         role: UserRole;
         milestoneId: string;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: Prisma.Decimal | null;
@@ -139,15 +141,15 @@ export declare class MilestonesService {
         role: UserRole;
         milestoneId: string;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: Prisma.Decimal | null;
@@ -162,15 +164,15 @@ export declare class MilestonesService {
         milestoneId: string;
         partialPercent?: number;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: Prisma.Decimal | null;
@@ -184,15 +186,15 @@ export declare class MilestonesService {
         role: UserRole;
         milestoneId: string;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: Prisma.Decimal | null;
@@ -206,15 +208,15 @@ export declare class MilestonesService {
         role: UserRole;
         milestoneId: string;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: Prisma.Decimal | null;

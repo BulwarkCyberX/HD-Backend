@@ -4,10 +4,13 @@ import { BidsService } from './bids.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { EmailModule } from '../email/email.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { HourlyModule } from '../hourly/hourly.module';
+import { IntegrationsModule } from '../integrations/integrations.module';
 
 @Module({
-  imports: [NotificationsModule, EmailModule, RealtimeModule],
+  imports: [NotificationsModule, EmailModule, RealtimeModule, HourlyModule, IntegrationsModule],
   controllers: [BidsController],
   providers: [BidsService],
+  exports: [BidsService],
 })
 export class BidsModule {}

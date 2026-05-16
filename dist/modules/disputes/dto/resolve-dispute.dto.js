@@ -24,4 +24,9 @@ __decorate([
     (0, class_validator_1.MaxLength)(8000),
     __metadata("design:type", String)
 ], ResolveDisputeDto.prototype, "resolution", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], ResolveDisputeDto.prototype, "processEscrowRefund", void 0);
 //# sourceMappingURL=resolve-dispute.dto.js.map

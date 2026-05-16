@@ -33,6 +33,9 @@ import { TrustModule } from './modules/trust/trust.module';
 import { PspModule } from './modules/psp/psp.module';
 import { KycModule } from './modules/kyc/kyc.module';
 import { PublicModule } from './modules/public/public.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { HourlyModule } from './modules/hourly/hourly.module';
+import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -71,6 +74,9 @@ import { APP_GUARD } from '@nestjs/core';
     PspModule,
     KycModule,
     PublicModule,
+    AdminModule,
+    HourlyModule,
+    IntegrationsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

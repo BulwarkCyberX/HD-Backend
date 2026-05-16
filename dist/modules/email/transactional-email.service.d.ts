@@ -1,11 +1,13 @@
 import { ConfigService } from '@nestjs/config';
 import { NotificationType } from '@prisma/client';
 import { AppMailService } from './app-mail.service';
+import { EmailTemplateService } from './email-template.service';
 export declare class TransactionalEmailService {
     private readonly mail;
     private readonly config;
+    private readonly templates;
     private readonly webOrigin;
-    constructor(mail: AppMailService, config: ConfigService);
+    constructor(mail: AppMailService, config: ConfigService, templates: EmailTemplateService);
     sendSignupVerification(input: {
         to: string;
         firstName: string;
@@ -39,6 +41,16 @@ export declare class TransactionalEmailService {
         projectTitle: string;
         amount: number;
     }): Promise<void>;
+    sendWeeklyDigest(input: {
+        to: string;
+        firstName: string;
+        items: Array<{
+            type: string;
+            message: string;
+            createdAt: Date;
+        }>;
+    }): Promise<void>;
+    private escapeHtml;
     sendNotificationRich(input: {
         to: string;
         type: NotificationType;

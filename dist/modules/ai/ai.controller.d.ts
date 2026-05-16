@@ -36,6 +36,9 @@ export declare class AiController {
     } | {
         suggestionsOnly: boolean;
     }>;
-    risk(user: RequestUser, dto: AiRiskDto): Promise<Record<string, unknown>>;
+    risk(user: RequestUser, dto: AiRiskDto): Promise<Record<string, unknown> | {
+        label: import(".prisma/client").$Enums.ReportSeverity;
+        rationale: string;
+    }>;
     duplicate(user: RequestUser, dto: AiDuplicateDto): Promise<Record<string, unknown>>;
 }

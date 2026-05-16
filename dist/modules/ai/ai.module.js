@@ -10,13 +10,17 @@ exports.AiModule = void 0;
 const common_1 = require("@nestjs/common");
 const ai_controller_1 = require("./ai.controller");
 const ai_service_1 = require("./ai.service");
+const ai_triage_service_1 = require("./ai-triage.service");
+const prisma_module_1 = require("../../prisma/prisma.module");
 let AiModule = class AiModule {
 };
 exports.AiModule = AiModule;
 exports.AiModule = AiModule = __decorate([
     (0, common_1.Module)({
+        imports: [prisma_module_1.PrismaModule],
         controllers: [ai_controller_1.AiController],
-        providers: [ai_service_1.AiService],
+        providers: [ai_service_1.AiService, ai_triage_service_1.AiTriageService],
+        exports: [ai_service_1.AiService, ai_triage_service_1.AiTriageService],
     })
 ], AiModule);
 //# sourceMappingURL=ai.module.js.map

@@ -26,4 +26,18 @@ export class NotificationEmailService {
       message: input.message,
     });
   }
+
+  async sendWeeklyDigestEmail(input: {
+    toEmail: string;
+    firstName: string;
+    items: Array<{ type: string; message: string; createdAt: Date }>;
+  }) {
+    if (!this.mail.isEnabled()) return;
+    if (!input.toEmail) return;
+    await this.transactional.sendWeeklyDigest({
+      to: input.toEmail,
+      firstName: input.firstName,
+      items: input.items,
+    });
+  }
 }

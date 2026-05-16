@@ -67,10 +67,10 @@ export declare class AuthController {
     }>;
     sessions(user: RequestUser): Promise<{
         id: string;
+        createdAt: Date;
         userAgent: string | null;
         ipAddress: string | null;
         expiresAt: Date;
-        createdAt: Date;
         lastUsedAt: Date;
     }[]>;
     revokeSession(user: RequestUser, id: string): Promise<{

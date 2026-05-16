@@ -12,12 +12,13 @@ const milestones_controller_1 = require("./milestones.controller");
 const milestones_service_1 = require("./milestones.service");
 const wallets_module_1 = require("../wallets/wallets.module");
 const realtime_module_1 = require("../realtime/realtime.module");
+const integrations_module_1 = require("../integrations/integrations.module");
 let MilestonesModule = class MilestonesModule {
 };
 exports.MilestonesModule = MilestonesModule;
 exports.MilestonesModule = MilestonesModule = __decorate([
     (0, common_1.Module)({
-        imports: [wallets_module_1.WalletsModule, realtime_module_1.RealtimeModule],
+        imports: [wallets_module_1.WalletsModule, realtime_module_1.RealtimeModule, integrations_module_1.IntegrationsModule],
         controllers: [milestones_controller_1.MilestonesController],
         providers: [milestones_service_1.MilestonesService],
         exports: [milestones_service_1.MilestonesService],

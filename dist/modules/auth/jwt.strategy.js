@@ -14,10 +14,14 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const passport_1 = require("@nestjs/passport");
 const passport_jwt_1 = require("passport-jwt");
+const auth_cookies_1 = require("./auth-cookies");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
     constructor(config) {
         super({
-            jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+            jwtFromRequest: passport_jwt_1.ExtractJwt.fromExtractors([
+                passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+                (req) => (0, auth_cookies_1.readAccessCookie)(req) ?? null,
+            ]),
             ignoreExpiration: false,
             secretOrKey: config.get('JWT_ACCESS_SECRET') ?? 'change-me-access',
         });

@@ -14,8 +14,11 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsController = void 0;
 const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
 const jwt_auth_guard_1 = require("../../auth/jwt-auth.guard");
 const current_user_decorator_1 = require("../../auth/current-user.decorator");
+const roles_decorator_1 = require("../../auth/roles.decorator");
+const roles_guard_1 = require("../../auth/roles.guard");
 const notifications_service_1 = require("./notifications.service");
 let NotificationsController = class NotificationsController {
     constructor(notifications) {
@@ -26,6 +29,9 @@ let NotificationsController = class NotificationsController {
     }
     markRead(user, id) {
         return this.notifications.markRead({ id, userId: user.userId });
+    }
+    sendWeeklyDigests() {
+        return this.notifications.sendWeeklyDigests();
     }
 };
 exports.NotificationsController = NotificationsController;
@@ -44,9 +50,16 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], NotificationsController.prototype, "markRead", null);
+__decorate([
+    (0, common_1.Post)('admin/weekly-digest'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], NotificationsController.prototype, "sendWeeklyDigests", null);
 exports.NotificationsController = NotificationsController = __decorate([
     (0, common_1.Controller)('notifications'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [notifications_service_1.NotificationsService])
 ], NotificationsController);
 //# sourceMappingURL=notifications.controller.js.map

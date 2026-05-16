@@ -1,10 +1,12 @@
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserRole, type BudgetType, type ProjectVisibility } from '@prisma/client';
+import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
 import { TransactionalEmailService } from '../email/transactional-email.service';
 export declare class ProjectsService {
     private readonly prisma;
     private readonly transactional;
-    constructor(prisma: PrismaService, transactional: TransactionalEmailService);
+    private readonly webhooks;
+    constructor(prisma: PrismaService, transactional: TransactionalEmailService, webhooks: WebhookDispatcherService);
     private readonly projectSelect;
     create(input: {
         userId: string;
@@ -24,10 +26,10 @@ export declare class ProjectsService {
         visibility: ProjectVisibility;
     }): Promise<{
         payment: {
+            amount: number;
             id: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.PaymentStatus;
-            amount: number;
             currency: import(".prisma/client").$Enums.PaymentCurrency;
         } | null;
         review: {
@@ -38,10 +40,18 @@ export declare class ProjectsService {
             providerId: string;
             comment: string | null;
         } | null;
+        clientReview: {
+            id: string;
+            createdAt: Date;
+            rating: number;
+            clientId: string;
+            providerId: string;
+            comment: string | null;
+        } | null;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         assets: import("@prisma/client/runtime/library").JsonValue;
         inScope: string[];
         outOfScope: string[];
@@ -67,10 +77,10 @@ export declare class ProjectsService {
     }>;
     listAll(): Promise<{
         payment: {
+            amount: number;
             id: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.PaymentStatus;
-            amount: number;
             currency: import(".prisma/client").$Enums.PaymentCurrency;
         } | null;
         review: {
@@ -81,10 +91,18 @@ export declare class ProjectsService {
             providerId: string;
             comment: string | null;
         } | null;
+        clientReview: {
+            id: string;
+            createdAt: Date;
+            rating: number;
+            clientId: string;
+            providerId: string;
+            comment: string | null;
+        } | null;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         assets: import("@prisma/client/runtime/library").JsonValue;
         inScope: string[];
         outOfScope: string[];
@@ -110,10 +128,10 @@ export declare class ProjectsService {
     }[]>;
     getById(id: string): Promise<{
         payment: {
+            amount: number;
             id: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.PaymentStatus;
-            amount: number;
             currency: import(".prisma/client").$Enums.PaymentCurrency;
         } | null;
         review: {
@@ -124,10 +142,18 @@ export declare class ProjectsService {
             providerId: string;
             comment: string | null;
         } | null;
+        clientReview: {
+            id: string;
+            createdAt: Date;
+            rating: number;
+            clientId: string;
+            providerId: string;
+            comment: string | null;
+        } | null;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         assets: import("@prisma/client/runtime/library").JsonValue;
         inScope: string[];
         outOfScope: string[];
@@ -158,10 +184,10 @@ export declare class ProjectsService {
         explicitClientConfirmation: boolean;
     }): Promise<{
         payment: {
+            amount: number;
             id: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.PaymentStatus;
-            amount: number;
             currency: import(".prisma/client").$Enums.PaymentCurrency;
         } | null;
         review: {
@@ -172,10 +198,18 @@ export declare class ProjectsService {
             providerId: string;
             comment: string | null;
         } | null;
+        clientReview: {
+            id: string;
+            createdAt: Date;
+            rating: number;
+            clientId: string;
+            providerId: string;
+            comment: string | null;
+        } | null;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         assets: import("@prisma/client/runtime/library").JsonValue;
         inScope: string[];
         outOfScope: string[];

@@ -3,6 +3,9 @@ import { NotificationType, ReportStatus, UserRole, type ReportSeverity } from '@
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { DomainEventsService } from '../realtime/domain-events.service';
+import { AiTriageService } from '../ai/ai-triage.service';
+import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
+import { WebhookEventType } from '@prisma/client';
 
 @Injectable()
 export class ReportsService {
@@ -10,6 +13,8 @@ export class ReportsService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly events: DomainEventsService,
+    private readonly aiTriage: AiTriageService,
+    private readonly webhooks: WebhookDispatcherService,
   ) {}
 
   private readonly reportSelect = {
@@ -21,6 +26,7 @@ export class ReportsService {
     severity: true,
     status: true,
     triageNotes: true,
+    aiTriageHints: true,
     validatedBy: true,
     createdAt: true,
     submitter: { select: { id: true, email: true, role: true } },
@@ -88,7 +94,21 @@ export class ReportsService {
 
     this.events.reportUpdated({ projectId: input.projectId, report: created });
 
+    void this.aiTriage.runForReport(created.id, input.submittedBy).catch(() => undefined);
+
     return created;
+  }
+
+  async runAiTriage(input: { reportId: string; requesterRole: UserRole; requesterId: string }) {
+    if (input.requesterRole !== UserRole.ADMIN) {
+      throw new ForbiddenException('Only admin can run AI triage');
+    }
+    const hints = await this.aiTriage.runForReport(input.reportId, input.requesterId);
+    if (!hints) throw new NotFoundException('Report not found');
+    return this.prisma.report.findUnique({
+      where: { id: input.reportId },
+      select: this.reportSelect,
+    });
   }
 
   async listByProject(input: { projectId: string; requesterId: string; requesterRole: UserRole }) {
@@ -191,6 +211,12 @@ export class ReportsService {
         userId: existing.submittedBy,
         type: NotificationType.REPORT_VALIDATED,
         message: `Your workspace security report was marked VALID`,
+      });
+      void this.webhooks.dispatch(updated.project.clientId, WebhookEventType.REPORT_VALIDATED, {
+        reportId: updated.id,
+        projectId: updated.projectId,
+        title: updated.title,
+        severity: updated.severity,
       });
     }
 

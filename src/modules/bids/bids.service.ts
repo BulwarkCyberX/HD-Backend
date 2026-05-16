@@ -1,5 +1,14 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { BidStatus, NotificationType, ProjectStatus, UserRole } from '@prisma/client';
+import {
+  BidStatus,
+  BudgetType,
+  NotificationType,
+  ProjectStatus,
+  UserRole,
+  WebhookEventType,
+} from '@prisma/client';
+import { HourlyService } from '../hourly/hourly.service';
+import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TransactionalEmailService } from '../email/transactional-email.service';
@@ -12,6 +21,8 @@ export class BidsService {
     private readonly notifications: NotificationsService,
     private readonly transactional: TransactionalEmailService,
     private readonly events: DomainEventsService,
+    private readonly hourly: HourlyService,
+    private readonly webhooks: WebhookDispatcherService,
   ) {}
 
   private readonly bidSelect = {
@@ -151,8 +162,9 @@ export class BidsService {
     role: UserRole;
     bidId: string;
     status: 'ACCEPTED' | 'REJECTED';
+    skipOwnershipCheck?: boolean;
   }) {
-    if (input.role !== UserRole.CLIENT) {
+    if (input.role !== UserRole.CLIENT && input.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Only clients can manage bids');
     }
     const bid = await this.prisma.bid.findUnique({
@@ -160,7 +172,11 @@ export class BidsService {
       select: { id: true, project: { select: { clientId: true } } },
     });
     if (!bid) throw new NotFoundException('Bid not found');
-    if (bid.project.clientId !== input.requesterId) {
+    if (
+      !input.skipOwnershipCheck &&
+      input.role === UserRole.CLIENT &&
+      bid.project.clientId !== input.requesterId
+    ) {
       throw new ForbiddenException('Only project owner can manage bid status');
     }
 
@@ -212,8 +228,55 @@ export class BidsService {
       message: `Your bid was accepted on "${projectTitle?.title ?? 'project'}"`,
     });
 
+    const projectMeta = await this.prisma.project.findUnique({
+      where: { id: updatedBid.projectId },
+      select: { budgetType: true },
+    });
+    if (projectMeta?.budgetType === BudgetType.HOURLY) {
+      await this.hourly.ensureEngagementForProject({
+        projectId: updatedBid.projectId,
+        hourlyRate: updatedBid.price,
+      });
+    }
+
     this.events.bidUpdated({ projectId: updatedBid.projectId, bid: updatedBid });
 
+    const projectRow = await this.prisma.project.findUnique({
+      where: { id: updatedBid.projectId },
+      select: { clientId: true },
+    });
+    if (projectRow) {
+      void this.webhooks.dispatch(projectRow.clientId, WebhookEventType.BID_ACCEPTED, {
+        projectId: updatedBid.projectId,
+        bidId: updatedBid.id,
+        providerId: updatedBid.providerId,
+      });
+      void this.webhooks.dispatch(updatedBid.providerId, WebhookEventType.BID_ACCEPTED, {
+        projectId: updatedBid.projectId,
+        bidId: updatedBid.id,
+        providerId: updatedBid.providerId,
+      });
+    }
+
     return updatedBid;
+  }
+
+  /** Admin override: accept bid and assign provider without client ownership check. */
+  async acceptBidAsAdmin(bidId: string) {
+    const bid = await this.prisma.bid.findUnique({
+      where: { id: bidId },
+      select: { id: true, status: true, projectId: true },
+    });
+    if (!bid) throw new NotFoundException('Bid not found');
+    if (bid.status !== BidStatus.PENDING) {
+      throw new BadRequestException('Only pending bids can be accepted');
+    }
+    return this.updateStatus({
+      requesterId: '',
+      role: UserRole.ADMIN,
+      bidId,
+      status: 'ACCEPTED',
+      skipOwnershipCheck: true,
+    });
   }
 }

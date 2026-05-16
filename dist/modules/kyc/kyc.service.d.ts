@@ -39,8 +39,8 @@ export declare class KycService {
     listPendingAdmin(role: UserRole): Promise<{
         user: {
             email: string;
-            id: string;
             firstName: string | null;
+            id: string;
             lastName: string | null;
         };
         id: string;

@@ -12,12 +12,14 @@ const reports_controller_1 = require("./reports.controller");
 const reports_service_1 = require("./reports.service");
 const notifications_module_1 = require("../notifications/notifications.module");
 const realtime_module_1 = require("../realtime/realtime.module");
+const ai_module_1 = require("../ai/ai.module");
+const integrations_module_1 = require("../integrations/integrations.module");
 let ReportsModule = class ReportsModule {
 };
 exports.ReportsModule = ReportsModule;
 exports.ReportsModule = ReportsModule = __decorate([
     (0, common_1.Module)({
-        imports: [notifications_module_1.NotificationsModule, realtime_module_1.RealtimeModule],
+        imports: [notifications_module_1.NotificationsModule, realtime_module_1.RealtimeModule, ai_module_1.AiModule, integrations_module_1.IntegrationsModule],
         controllers: [reports_controller_1.ReportsController],
         providers: [reports_service_1.ReportsService],
     })

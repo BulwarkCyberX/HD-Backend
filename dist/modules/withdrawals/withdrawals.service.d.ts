@@ -14,35 +14,41 @@ export declare class WithdrawalsService {
         amount: number;
         currency: PaymentCurrency;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
         createdAt: Date;
+        updatedAt: Date;
         userId: string;
         status: import(".prisma/client").$Enums.WithdrawalRequestStatus;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         reviewedAt: Date | null;
         adminReviewerId: string | null;
     }>;
     listMine(userId: string): Promise<{
+        amount: Prisma.Decimal;
         id: string;
         createdAt: Date;
+        updatedAt: Date;
         userId: string;
         status: import(".prisma/client").$Enums.WithdrawalRequestStatus;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         reviewedAt: Date | null;
         adminReviewerId: string | null;
     }[]>;
     listPendingAdmin(requesterRole: UserRole): Promise<{
+        user: {
+            email: string;
+            firstName: string | null;
+            id: string;
+            lastName: string | null;
+        };
+        amount: Prisma.Decimal;
         id: string;
         createdAt: Date;
+        updatedAt: Date;
         userId: string;
         status: import(".prisma/client").$Enums.WithdrawalRequestStatus;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         reviewedAt: Date | null;
         adminReviewerId: string | null;
     }[]>;
@@ -51,13 +57,13 @@ export declare class WithdrawalsService {
         role: UserRole;
         withdrawalId: string;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
         createdAt: Date;
+        updatedAt: Date;
         userId: string;
         status: import(".prisma/client").$Enums.WithdrawalRequestStatus;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         reviewedAt: Date | null;
         adminReviewerId: string | null;
     }>;
@@ -66,13 +72,13 @@ export declare class WithdrawalsService {
         role: UserRole;
         withdrawalId: string;
     }): Promise<{
+        amount: Prisma.Decimal;
         id: string;
         createdAt: Date;
+        updatedAt: Date;
         userId: string;
         status: import(".prisma/client").$Enums.WithdrawalRequestStatus;
-        amount: Prisma.Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         reviewedAt: Date | null;
         adminReviewerId: string | null;
     }>;

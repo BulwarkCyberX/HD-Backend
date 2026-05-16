@@ -40,4 +40,8 @@ export declare class NotificationsService {
         type: import(".prisma/client").$Enums.NotificationType;
         read: boolean;
     }>;
+    sendWeeklyDigests(): Promise<{
+        sent: number;
+        since: string;
+    }>;
 }

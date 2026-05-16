@@ -21,6 +21,7 @@ import Redis from 'ioredis';
     BullModule.registerQueue({ name: 'ai' }),
     BullModule.registerQueue({ name: 'reports' }),
     BullModule.registerQueue({ name: 'payouts' }),
+    BullModule.registerQueue({ name: 'webhooks' }),
   ],
   exports: [BullModule],
 })

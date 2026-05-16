@@ -33,6 +33,7 @@ exports.QueuesModule = QueuesModule = __decorate([
             bullmq_1.BullModule.registerQueue({ name: 'ai' }),
             bullmq_1.BullModule.registerQueue({ name: 'reports' }),
             bullmq_1.BullModule.registerQueue({ name: 'payouts' }),
+            bullmq_1.BullModule.registerQueue({ name: 'webhooks' }),
         ],
         exports: [bullmq_1.BullModule],
     })

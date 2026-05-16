@@ -34,8 +34,8 @@ export declare class KycController {
     pending(user: RequestUser): Promise<{
         user: {
             email: string;
-            id: string;
             firstName: string | null;
+            id: string;
             lastName: string | null;
         };
         id: string;

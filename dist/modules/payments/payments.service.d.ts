@@ -1,4 +1,5 @@
 import { UserRole, type PaymentCurrency } from '@prisma/client';
+import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WalletService } from '../wallets/wallet.service';
@@ -8,7 +9,8 @@ export declare class PaymentsService {
     private readonly notifications;
     private readonly wallets;
     private readonly platformFees;
-    constructor(prisma: PrismaService, notifications: NotificationsService, wallets: WalletService, platformFees: PlatformFeeService);
+    private readonly webhooks;
+    constructor(prisma: PrismaService, notifications: NotificationsService, wallets: WalletService, platformFees: PlatformFeeService, webhooks: WebhookDispatcherService);
     private readonly paymentSelect;
     deposit(input: {
         requesterId: string;
@@ -18,13 +20,13 @@ export declare class PaymentsService {
         currency: PaymentCurrency;
         allowLedgerOnly?: boolean;
     }): Promise<{
+        amount: number;
         id: string;
         createdAt: Date;
         status: import(".prisma/client").$Enums.PaymentStatus;
         projectId: string;
         payerId: string;
         payeeId: string;
-        amount: number;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
     }>;
     depositFromPsp(input: {
@@ -33,13 +35,13 @@ export declare class PaymentsService {
         amount: number;
         currency: PaymentCurrency;
     }): Promise<{
+        amount: number;
         id: string;
         createdAt: Date;
         status: import(".prisma/client").$Enums.PaymentStatus;
         projectId: string;
         payerId: string;
         payeeId: string;
-        amount: number;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
     }>;
     release(input: {
@@ -47,13 +49,13 @@ export declare class PaymentsService {
         role: UserRole;
         projectId: string;
     }): Promise<{
+        amount: number;
         id: string;
         createdAt: Date;
         status: import(".prisma/client").$Enums.PaymentStatus;
         projectId: string;
         payerId: string;
         payeeId: string;
-        amount: number;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
     }>;
 }

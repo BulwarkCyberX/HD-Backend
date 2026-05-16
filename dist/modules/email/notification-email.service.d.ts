@@ -11,5 +11,14 @@ export declare class NotificationEmailService {
     private readonly transactional;
     constructor(mail: AppMailService, transactional: TransactionalEmailService);
     sendNotificationEmail(input: SendNotificationEmailInput): Promise<void>;
+    sendWeeklyDigestEmail(input: {
+        toEmail: string;
+        firstName: string;
+        items: Array<{
+            type: string;
+            message: string;
+            createdAt: Date;
+        }>;
+    }): Promise<void>;
 }
 export {};

@@ -47,9 +47,13 @@ export declare class AiService {
     classifyRisk(input: {
         title: string;
         description: string;
-    }, userId: string): Promise<Record<string, unknown>>;
+    }, userId: string): Promise<Record<string, unknown> | {
+        label: import(".prisma/client").$Enums.ReportSeverity;
+        rationale: string;
+    }>;
     duplicateHint(a: string, b: string, userId: string): Promise<Record<string, unknown>>;
     private mockScope;
     private mockProposal;
+    private mockRiskClassification;
     private mockReview;
 }

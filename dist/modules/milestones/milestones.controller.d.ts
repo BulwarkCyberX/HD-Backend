@@ -8,15 +8,15 @@ export declare class MilestonesController {
     private readonly milestones;
     constructor(milestones: MilestonesService);
     listByProject(user: RequestUser, projectId: string): Promise<{
+        amount: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: import("@prisma/client/runtime/library").Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: import("@prisma/client/runtime/library").Decimal | null;
@@ -26,15 +26,15 @@ export declare class MilestonesController {
         releasedAt: Date | null;
     }[]>;
     create(user: RequestUser, dto: CreateMilestoneDto): Promise<{
+        amount: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: import("@prisma/client/runtime/library").Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: import("@prisma/client/runtime/library").Decimal | null;
@@ -44,15 +44,15 @@ export declare class MilestonesController {
         releasedAt: Date | null;
     }>;
     update(user: RequestUser, id: string, dto: UpdateMilestoneDto): Promise<{
+        amount: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: import("@prisma/client/runtime/library").Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: import("@prisma/client/runtime/library").Decimal | null;
@@ -65,15 +65,15 @@ export declare class MilestonesController {
         ok: true;
     }>;
     fund(user: RequestUser, id: string): Promise<{
+        amount: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: import("@prisma/client/runtime/library").Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: import("@prisma/client/runtime/library").Decimal | null;
@@ -83,15 +83,15 @@ export declare class MilestonesController {
         releasedAt: Date | null;
     }>;
     start(user: RequestUser, id: string): Promise<{
+        amount: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: import("@prisma/client/runtime/library").Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: import("@prisma/client/runtime/library").Decimal | null;
@@ -101,15 +101,15 @@ export declare class MilestonesController {
         releasedAt: Date | null;
     }>;
     submit(user: RequestUser, id: string): Promise<{
+        amount: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: import("@prisma/client/runtime/library").Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: import("@prisma/client/runtime/library").Decimal | null;
@@ -119,15 +119,15 @@ export declare class MilestonesController {
         releasedAt: Date | null;
     }>;
     approve(user: RequestUser, id: string, dto: ApproveMilestoneDto): Promise<{
+        amount: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: import("@prisma/client/runtime/library").Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: import("@prisma/client/runtime/library").Decimal | null;
@@ -137,15 +137,15 @@ export declare class MilestonesController {
         releasedAt: Date | null;
     }>;
     release(user: RequestUser, id: string): Promise<{
+        amount: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: import("@prisma/client/runtime/library").Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: import("@prisma/client/runtime/library").Decimal | null;
@@ -155,15 +155,15 @@ export declare class MilestonesController {
         releasedAt: Date | null;
     }>;
     reject(user: RequestUser, id: string): Promise<{
+        amount: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.MilestoneStatus;
         projectId: string;
-        amount: import("@prisma/client/runtime/library").Decimal;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
-        updatedAt: Date;
         sortOrder: number;
         partialPercent: number | null;
         releasedAmount: import("@prisma/client/runtime/library").Decimal | null;

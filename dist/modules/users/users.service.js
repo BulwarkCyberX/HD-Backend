@@ -30,12 +30,32 @@ let UsersService = class UsersService {
                 entity: { select: { id: true, type: true, name: true, verificationStatus: true, createdAt: true } },
                 providerProfile: true,
                 clientProfile: true,
+                userSettings: true,
             },
         });
         if (!user)
             throw new common_1.NotFoundException('User not found');
-        const { emailVerifiedAt, ...rest } = user;
-        return { ...rest, emailVerified: !!emailVerifiedAt };
+        const { emailVerifiedAt, userSettings, ...rest } = user;
+        return {
+            ...rest,
+            emailVerified: !!emailVerifiedAt,
+            settings: userSettings ?? { emailDigestWeekly: true, lastEmailDigestAt: null },
+        };
+    }
+    async updateSettings(userId, input) {
+        const settings = await this.prisma.userSettings.upsert({
+            where: { userId },
+            create: {
+                userId,
+                emailDigestWeekly: input.emailDigestWeekly ?? true,
+            },
+            update: {
+                ...(input.emailDigestWeekly !== undefined
+                    ? { emailDigestWeekly: input.emailDigestWeekly }
+                    : {}),
+            },
+        });
+        return settings;
     }
     async getById(requester, id) {
         if (requester.role !== client_1.UserRole.ADMIN && requester.userId !== id) {
@@ -81,6 +101,27 @@ let UsersService = class UsersService {
             throw new common_1.NotFoundException('Provider profile not found');
         }
         return user;
+    }
+    async updateProviderProfile(userId, role, input) {
+        if (role !== client_1.UserRole.PROVIDER) {
+            throw new common_1.ForbiddenException('Only providers can update provider profile');
+        }
+        const profile = await this.prisma.providerProfile.findUnique({ where: { userId } });
+        if (!profile)
+            throw new common_1.NotFoundException('Provider profile not found');
+        await this.prisma.providerProfile.update({
+            where: { userId },
+            data: {
+                ...(input.bio !== undefined ? { bio: input.bio } : {}),
+                ...(input.portfolio !== undefined ? { portfolio: input.portfolio } : {}),
+                ...(input.availabilityStatus !== undefined
+                    ? { availabilityStatus: input.availabilityStatus }
+                    : {}),
+                ...(input.skills !== undefined ? { skills: input.skills } : {}),
+                ...(input.certifications !== undefined ? { certifications: input.certifications } : {}),
+            },
+        });
+        return this.getMe(userId);
     }
 };
 exports.UsersService = UsersService;

@@ -38,6 +38,7 @@ export declare class WalletService {
     }): Promise<{
         id: string;
         createdAt: Date;
+        updatedAt: Date;
         userId: string;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
         availableBalance: Prisma.Decimal;
@@ -45,7 +46,6 @@ export declare class WalletService {
         escrowBalance: Prisma.Decimal;
         lifetimeEarnings: Prisma.Decimal;
         totalSpent: Prisma.Decimal;
-        updatedAt: Date;
     }>;
     recordProjectEscrowDepositTx(tx: Prisma.TransactionClient, input: {
         clientUserId: string;
@@ -56,6 +56,7 @@ export declare class WalletService {
     }): Promise<{
         id: string;
         createdAt: Date;
+        updatedAt: Date;
         userId: string;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
         availableBalance: Prisma.Decimal;
@@ -63,7 +64,6 @@ export declare class WalletService {
         escrowBalance: Prisma.Decimal;
         lifetimeEarnings: Prisma.Decimal;
         totalSpent: Prisma.Decimal;
-        updatedAt: Date;
     }>;
     recordEscrowReleaseAndFees(input: {
         clientUserId: string;
@@ -121,6 +121,15 @@ export declare class WalletService {
         clientFee: Prisma.Decimal;
         providerFee: Prisma.Decimal;
     }>;
+    recordProjectEscrowRefundToClientTx(tx: Prisma.TransactionClient, input: {
+        clientUserId: string;
+        projectId: string;
+        paymentId: string;
+        amount: Prisma.Decimal;
+        currency: PaymentCurrency;
+        actorUserId: string;
+        disputeId?: string;
+    }): Promise<void>;
     recordMilestoneRejectRefundTx(tx: Prisma.TransactionClient, input: {
         clientUserId: string;
         amount: Prisma.Decimal;

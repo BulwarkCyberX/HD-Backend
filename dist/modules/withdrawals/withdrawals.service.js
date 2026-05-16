@@ -65,7 +65,10 @@ let WithdrawalsService = class WithdrawalsService {
         return this.prisma.withdrawalRequest.findMany({
             where: { status: client_1.WithdrawalRequestStatus.PENDING },
             orderBy: { createdAt: 'asc' },
-            select: this.select,
+            select: {
+                ...this.select,
+                user: { select: { id: true, email: true, firstName: true, lastName: true } },
+            },
         });
     }
     async approve(input) {
@@ -104,7 +107,7 @@ let WithdrawalsService = class WithdrawalsService {
             throw new common_1.ForbiddenException('Admin only');
         const w = await this.prisma.withdrawalRequest.findUnique({
             where: { id: input.withdrawalId },
-            select: { id: true, status: true },
+            select: { id: true, status: true, userId: true, amount: true, currency: true },
         });
         if (!w)
             throw new common_1.NotFoundException('Withdrawal not found');

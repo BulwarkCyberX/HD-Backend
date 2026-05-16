@@ -8,10 +8,10 @@ export declare class BountyController {
     constructor(bounty: BountyService);
     createProgram(user: RequestUser, dto: CreateProgramDto): Promise<{
         id: string;
+        description: string;
+        title: string;
         createdAt: Date;
         scope: import("@prisma/client/runtime/library").JsonValue;
-        title: string;
-        description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
@@ -19,10 +19,10 @@ export declare class BountyController {
     }>;
     listPrograms(user: RequestUser): Promise<{
         id: string;
+        description: string;
+        title: string;
         createdAt: Date;
         scope: import("@prisma/client/runtime/library").JsonValue;
-        title: string;
-        description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
@@ -30,10 +30,10 @@ export declare class BountyController {
     }[]>;
     getProgram(user: RequestUser, id: string): Promise<{
         id: string;
+        description: string;
+        title: string;
         createdAt: Date;
         scope: import("@prisma/client/runtime/library").JsonValue;
-        title: string;
-        description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
@@ -41,9 +41,9 @@ export declare class BountyController {
     }>;
     submitReport(user: RequestUser, dto: CreateBugReportDto): Promise<{
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         status: import(".prisma/client").$Enums.BugReportStatus;
         files: {
             id: string;
@@ -62,9 +62,9 @@ export declare class BountyController {
     }>;
     listReports(user: RequestUser, programId: string): Promise<{
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         status: import(".prisma/client").$Enums.BugReportStatus;
         files: {
             id: string;
@@ -83,9 +83,9 @@ export declare class BountyController {
     }[]>;
     updateReportStatus(user: RequestUser, id: string, dto: UpdateBugReportStatusDto): Promise<{
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         status: import(".prisma/client").$Enums.BugReportStatus;
         files: {
             id: string;

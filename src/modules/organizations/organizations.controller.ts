@@ -1,10 +1,14 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { CurrentUser, type RequestUser } from '../../auth/current-user.decorator';
 import { OrganizationsService } from './organizations.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { AddMemberDto } from './dto/add-member.dto';
+import { LinkProjectDto } from './dto/link-project.dto';
 
+@ApiTags('organizations')
+@ApiBearerAuth()
 @Controller('organizations')
 @UseGuards(JwtAuthGuard)
 export class OrganizationsController {
@@ -25,6 +29,11 @@ export class OrganizationsController {
     return this.orgs.listMine(user.userId);
   }
 
+  @Get(':id')
+  getById(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.orgs.getById(id, user.userId);
+  }
+
   @Post(':id/members')
   addMember(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() dto: AddMemberDto) {
     return this.orgs.addMember({
@@ -32,6 +41,34 @@ export class OrganizationsController {
       requesterId: user.userId,
       email: dto.email,
       role: dto.role,
+    });
+  }
+
+  @Get(':id/projects/linkable')
+  listLinkable(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.orgs.listLinkableProjects(id, user.userId);
+  }
+
+  @Post(':id/projects')
+  @ApiOperation({ summary: 'Link an owned project to this organization' })
+  linkProject(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() dto: LinkProjectDto) {
+    return this.orgs.linkProject({
+      orgId: id,
+      projectId: dto.projectId,
+      requesterId: user.userId,
+    });
+  }
+
+  @Delete(':id/projects/:projectId')
+  unlinkProject(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.orgs.unlinkProject({
+      orgId: id,
+      projectId,
+      requesterId: user.userId,
     });
   }
 }

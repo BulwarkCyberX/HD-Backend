@@ -30,4 +30,19 @@ export declare class ReviewsService {
         providerId: string;
         comment: string | null;
     }>;
+    createClientReview(input: {
+        requesterId: string;
+        role: UserRole;
+        projectId: string;
+        rating: number;
+        comment?: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        rating: number;
+        clientId: string;
+        projectId: string;
+        providerId: string;
+        comment: string | null;
+    }>;
 }

@@ -237,6 +237,34 @@ let WalletService = class WalletService {
             providerFeeBps,
         });
     }
+    async recordProjectEscrowRefundToClientTx(tx, input) {
+        const { clientUserId, projectId, paymentId, amount, currency, actorUserId, disputeId } = input;
+        await this.ensureUserWalletTx(tx, clientUserId, currency);
+        const clientWallet = await tx.userWallet.findUniqueOrThrow({ where: { userId: clientUserId } });
+        if (clientWallet.escrowBalance.lt(amount)) {
+            throw new common_1.BadRequestException('Insufficient escrow balance for refund');
+        }
+        await tx.userWallet.update({
+            where: { id: clientWallet.id },
+            data: {
+                escrowBalance: { decrement: amount },
+                availableBalance: { increment: amount },
+                totalSpent: { decrement: amount },
+            },
+        });
+        await tx.walletLedgerEntry.create({
+            data: {
+                type: client_1.LedgerEntryType.REFUND,
+                amount,
+                currency,
+                status: client_1.LedgerEntryStatus.POSTED,
+                referenceId: paymentId,
+                metadata: { projectId, disputeId, leg: 'escrow_to_client_available' },
+                userWalletId: clientWallet.id,
+                actorUserId,
+            },
+        });
+    }
     async recordMilestoneRejectRefundTx(tx, input) {
         const { clientUserId, amount, currency, actorUserId, milestoneId, projectId } = input;
         await this.ensureUserWalletTx(tx, clientUserId, currency);

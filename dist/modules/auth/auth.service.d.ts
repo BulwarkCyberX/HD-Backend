@@ -115,10 +115,10 @@ export declare class AuthService {
     }>;
     listSessions(userId: string): Promise<{
         id: string;
+        createdAt: Date;
         userAgent: string | null;
         ipAddress: string | null;
         expiresAt: Date;
-        createdAt: Date;
         lastUsedAt: Date;
     }[]>;
     revokeSession(userId: string, sessionId: string): Promise<{

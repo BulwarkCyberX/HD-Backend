@@ -328,6 +328,47 @@ export class WalletService {
     });
   }
 
+  /** Return project escrow from client wallet escrow → available (dispute / cancellation). */
+  async recordProjectEscrowRefundToClientTx(
+    tx: Prisma.TransactionClient,
+    input: {
+      clientUserId: string;
+      projectId: string;
+      paymentId: string;
+      amount: Prisma.Decimal;
+      currency: PaymentCurrency;
+      actorUserId: string;
+      disputeId?: string;
+    },
+  ) {
+    const { clientUserId, projectId, paymentId, amount, currency, actorUserId, disputeId } = input;
+    await this.ensureUserWalletTx(tx, clientUserId, currency);
+    const clientWallet = await tx.userWallet.findUniqueOrThrow({ where: { userId: clientUserId } });
+    if (clientWallet.escrowBalance.lt(amount)) {
+      throw new BadRequestException('Insufficient escrow balance for refund');
+    }
+    await tx.userWallet.update({
+      where: { id: clientWallet.id },
+      data: {
+        escrowBalance: { decrement: amount },
+        availableBalance: { increment: amount },
+        totalSpent: { decrement: amount },
+      },
+    });
+    await tx.walletLedgerEntry.create({
+      data: {
+        type: LedgerEntryType.REFUND,
+        amount,
+        currency,
+        status: LedgerEntryStatus.POSTED,
+        referenceId: paymentId,
+        metadata: { projectId, disputeId, leg: 'escrow_to_client_available' },
+        userWalletId: clientWallet.id,
+        actorUserId,
+      },
+    });
+  }
+
   async recordMilestoneRejectRefundTx(
     tx: Prisma.TransactionClient,
     input: {

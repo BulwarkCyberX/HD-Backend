@@ -34,6 +34,15 @@ let ReviewsController = class ReviewsController {
             comment: dto.comment,
         });
     }
+    createClientReview(user, dto) {
+        return this.reviews.createClientReview({
+            requesterId: user.userId,
+            role: user.role,
+            projectId: dto.projectId,
+            rating: dto.rating,
+            comment: dto.comment,
+        });
+    }
 };
 exports.ReviewsController = ReviewsController;
 __decorate([
@@ -45,6 +54,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, create_review_dto_1.CreateReviewDto]),
     __metadata("design:returntype", void 0)
 ], ReviewsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('client'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.PROVIDER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, create_review_dto_1.CreateReviewDto]),
+    __metadata("design:returntype", void 0)
+], ReviewsController.prototype, "createClientReview", null);
 exports.ReviewsController = ReviewsController = __decorate([
     (0, common_1.Controller)('reviews'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

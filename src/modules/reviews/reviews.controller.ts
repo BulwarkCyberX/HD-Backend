@@ -23,4 +23,16 @@ export class ReviewsController {
       comment: dto.comment,
     });
   }
+
+  @Post('client')
+  @Roles(UserRole.PROVIDER)
+  createClientReview(@CurrentUser() user: RequestUser, @Body() dto: CreateReviewDto) {
+    return this.reviews.createClientReview({
+      requesterId: user.userId,
+      role: user.role,
+      projectId: dto.projectId,
+      rating: dto.rating,
+      comment: dto.comment,
+    });
+  }
 }

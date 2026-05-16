@@ -12,17 +12,17 @@ export declare class VdpService {
         policy: string;
     }): Promise<{
         id: string;
+        title: string;
         createdAt: Date;
         scope: import("@prisma/client/runtime/library").JsonValue;
-        title: string;
         clientId: string;
         policy: string;
     }>;
     getPublic(id: string): Promise<{
         id: string;
+        title: string;
         createdAt: Date;
         scope: import("@prisma/client/runtime/library").JsonValue;
-        title: string;
         policy: string;
     }>;
     submitReport(input: {
@@ -33,9 +33,9 @@ export declare class VdpService {
         severity?: ReportSeverity;
     }): Promise<{
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         severity: import(".prisma/client").$Enums.ReportSeverity | null;
         vdpId: string;
         contactEmail: string | null;

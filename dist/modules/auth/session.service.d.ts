@@ -27,10 +27,10 @@ export declare class SessionService {
     revokeByRefreshToken(refreshToken: string): Promise<void>;
     listSessions(userId: string): Promise<{
         id: string;
+        createdAt: Date;
         userAgent: string | null;
         ipAddress: string | null;
         expiresAt: Date;
-        createdAt: Date;
         lastUsedAt: Date;
     }[]>;
     revokeSession(userId: string, sessionId: string): Promise<{

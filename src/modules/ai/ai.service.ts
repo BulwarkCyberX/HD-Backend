@@ -128,12 +128,12 @@ export class AiService {
   async classifyRisk(input: { title: string; description: string }, userId: string) {
     await this.rateLimit(userId);
     if (!this.client) {
-      return { label: 'UNKNOWN', rationale: 'Configure OPENAI_API_KEY for live classification.' };
+      return this.mockRiskClassification(input);
     }
     return this.completeJson(
       userId,
       AiJobType.RISK_CLASSIFICATION,
-      'Classify security risk. JSON keys: label (LOW|MEDIUM|HIGH|CRITICAL), rationale (string).',
+      'Classify security risk for a pentest report. JSON keys: label (LOW|MEDIUM|HIGH|CRITICAL only), rationale (string).',
       JSON.stringify(input),
     );
   }
@@ -177,6 +177,22 @@ export class AiService {
       suggestionsOnly: true,
       improved: `${trimmed}\n\n---\nSuggested additions:\n- Methodology\n- Deliverables`,
       hints: ['Methodology', 'Deliverables'],
+    };
+  }
+
+  private mockRiskClassification(input: { title: string; description: string }) {
+    const text = `${input.title} ${input.description}`.toLowerCase();
+    let label: ReportSeverity = ReportSeverity.MEDIUM;
+    if (text.includes('rce') || text.includes('critical') || text.includes('auth bypass')) {
+      label = ReportSeverity.CRITICAL;
+    } else if (text.includes('sql') || text.includes('xss') || text.includes('high')) {
+      label = ReportSeverity.HIGH;
+    } else if (text.includes('info') || text.includes('low')) {
+      label = ReportSeverity.LOW;
+    }
+    return {
+      label,
+      rationale: 'Heuristic mock severity (set OPENAI_API_KEY for live triage).',
     };
   }
 

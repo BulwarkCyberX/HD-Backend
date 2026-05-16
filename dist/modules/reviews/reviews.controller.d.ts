@@ -24,4 +24,13 @@ export declare class ReviewsController {
         providerId: string;
         comment: string | null;
     }>;
+    createClientReview(user: RequestUser, dto: CreateReviewDto): Promise<{
+        id: string;
+        createdAt: Date;
+        rating: number;
+        clientId: string;
+        projectId: string;
+        providerId: string;
+        comment: string | null;
+    }>;
 }

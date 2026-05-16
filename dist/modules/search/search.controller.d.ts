@@ -6,8 +6,8 @@ export declare class SearchController {
     constructor(search: SearchService);
     projects(user: RequestUser, q?: string): Promise<{
         id: string;
-        createdAt: Date;
         title: string;
+        createdAt: Date;
         budgetType: import(".prisma/client").$Enums.BudgetType;
         budgetAmount: number;
         visibility: import(".prisma/client").$Enums.ProjectVisibility;

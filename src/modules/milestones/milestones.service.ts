@@ -9,8 +9,10 @@ import {
   PaymentStatus,
   Prisma,
   UserRole,
+  WebhookEventType,
   type PaymentCurrency,
 } from '@prisma/client';
+import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { WalletService } from '../wallets/wallet.service';
 import { DomainEventsService } from '../realtime/domain-events.service';
@@ -29,6 +31,7 @@ export class MilestonesService {
     private readonly prisma: PrismaService,
     private readonly wallets: WalletService,
     private readonly events: DomainEventsService,
+    private readonly webhooks: WebhookDispatcherService,
   ) {}
 
   private readonly select = {
@@ -273,6 +276,11 @@ export class MilestonesService {
       return row;
     });
     this.emitMilestone(released);
+    void this.webhooks.dispatch(project.clientId, WebhookEventType.MILESTONE_RELEASED, {
+      milestoneId: released.id,
+      projectId: m.projectId,
+      amount: gross.toString(),
+    });
     return released;
   }
 

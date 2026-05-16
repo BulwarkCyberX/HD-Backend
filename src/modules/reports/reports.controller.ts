@@ -30,6 +30,16 @@ export class ReportsController {
     return this.reports.listAllForAdmin({ requesterRole: user.role });
   }
 
+  @Post(':id/ai-triage')
+  @Roles(UserRole.ADMIN)
+  runAiTriage(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.reports.runAiTriage({
+      reportId: id,
+      requesterId: user.userId,
+      requesterRole: user.role,
+    });
+  }
+
   @Get(':projectId')
   listByProject(@CurrentUser() user: RequestUser, @Param('projectId') projectId: string) {
     return this.reports.listByProject({

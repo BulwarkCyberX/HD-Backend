@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { CurrentUser, type RequestUser } from '../../auth/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -8,6 +9,8 @@ import { SubmitKycDto } from './dto/submit-kyc.dto';
 import { ReviewKycDto } from './dto/review-kyc.dto';
 import { KycService } from './kyc.service';
 
+@ApiTags('admin')
+@ApiBearerAuth()
 @Controller('kyc')
 @UseGuards(JwtAuthGuard)
 export class KycController {
@@ -31,6 +34,7 @@ export class KycController {
   }
 
   @Get('admin/pending')
+  @ApiOperation({ summary: 'List pending KYC submissions (admin)' })
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   pending(@CurrentUser() user: RequestUser) {

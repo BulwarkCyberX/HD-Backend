@@ -13,14 +13,17 @@ const bids_service_1 = require("./bids.service");
 const notifications_module_1 = require("../notifications/notifications.module");
 const email_module_1 = require("../email/email.module");
 const realtime_module_1 = require("../realtime/realtime.module");
+const hourly_module_1 = require("../hourly/hourly.module");
+const integrations_module_1 = require("../integrations/integrations.module");
 let BidsModule = class BidsModule {
 };
 exports.BidsModule = BidsModule;
 exports.BidsModule = BidsModule = __decorate([
     (0, common_1.Module)({
-        imports: [notifications_module_1.NotificationsModule, email_module_1.EmailModule, realtime_module_1.RealtimeModule],
+        imports: [notifications_module_1.NotificationsModule, email_module_1.EmailModule, realtime_module_1.RealtimeModule, hourly_module_1.HourlyModule, integrations_module_1.IntegrationsModule],
         controllers: [bids_controller_1.BidsController],
         providers: [bids_service_1.BidsService],
+        exports: [bids_service_1.BidsService],
     })
 ], BidsModule);
 //# sourceMappingURL=bids.module.js.map

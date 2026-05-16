@@ -40,12 +40,57 @@ let OrganizationsService = class OrganizationsService {
                 id: true,
                 name: true,
                 slug: true,
+                createdAt: true,
                 members: {
                     where: { userId },
                     select: { role: true },
                 },
+                _count: { select: { members: true, projects: true } },
             },
         });
+    }
+    async getById(orgId, requesterId) {
+        const member = await this.prisma.organizationMember.findFirst({
+            where: { organizationId: orgId, userId: requesterId },
+        });
+        if (!member)
+            throw new common_1.ForbiddenException('Not a member of this organization');
+        const org = await this.prisma.organization.findUnique({
+            where: { id: orgId },
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                createdAt: true,
+                members: {
+                    select: {
+                        id: true,
+                        role: true,
+                        createdAt: true,
+                        user: { select: { id: true, email: true, firstName: true, lastName: true } },
+                    },
+                },
+                projects: {
+                    select: {
+                        project: {
+                            select: {
+                                id: true,
+                                title: true,
+                                status: true,
+                                budgetAmount: true,
+                                createdAt: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        if (!org)
+            throw new common_1.NotFoundException('Organization not found');
+        return {
+            ...org,
+            projects: org.projects.map((p) => p.project),
+        };
     }
     async addMember(input) {
         await this.assertAdminOrOwner(input.orgId, input.requesterId);
@@ -65,6 +110,81 @@ let OrganizationsService = class OrganizationsService {
         catch {
             throw new common_1.BadRequestException('Member may already exist');
         }
+    }
+    async linkProject(input) {
+        await this.assertMember(input.orgId, input.requesterId);
+        const project = await this.prisma.project.findUnique({
+            where: { id: input.projectId },
+            select: { id: true, clientId: true, title: true },
+        });
+        if (!project)
+            throw new common_1.NotFoundException('Project not found');
+        if (project.clientId !== input.requesterId) {
+            throw new common_1.ForbiddenException('Only the project owner can link it to an organization');
+        }
+        const existing = await this.prisma.organizationProject.findUnique({
+            where: { projectId: input.projectId },
+        });
+        if (existing && existing.organizationId !== input.orgId) {
+            throw new common_1.BadRequestException('Project is already linked to another organization');
+        }
+        if (existing)
+            return { organizationId: input.orgId, projectId: input.projectId };
+        return this.prisma.organizationProject.create({
+            data: { organizationId: input.orgId, projectId: input.projectId },
+            select: { organizationId: true, projectId: true },
+        });
+    }
+    async unlinkProject(input) {
+        await this.assertMember(input.orgId, input.requesterId);
+        const project = await this.prisma.project.findUnique({
+            where: { id: input.projectId },
+            select: { clientId: true },
+        });
+        if (!project)
+            throw new common_1.NotFoundException('Project not found');
+        if (project.clientId !== input.requesterId) {
+            throw new common_1.ForbiddenException('Only the project owner can unlink it');
+        }
+        const link = await this.prisma.organizationProject.findFirst({
+            where: { organizationId: input.orgId, projectId: input.projectId },
+        });
+        if (!link)
+            throw new common_1.NotFoundException('Project is not linked to this organization');
+        await this.prisma.organizationProject.delete({
+            where: {
+                organizationId_projectId: {
+                    organizationId: input.orgId,
+                    projectId: input.projectId,
+                },
+            },
+        });
+        return { ok: true };
+    }
+    async listLinkableProjects(orgId, requesterId) {
+        await this.assertMember(orgId, requesterId);
+        const linked = await this.prisma.organizationProject.findMany({
+            where: { organizationId: orgId },
+            select: { projectId: true },
+        });
+        const linkedIds = linked.map((l) => l.projectId);
+        return this.prisma.project.findMany({
+            where: {
+                clientId: requesterId,
+                ...(linkedIds.length > 0 ? { id: { notIn: linkedIds } } : {}),
+                organizationLink: null,
+            },
+            select: { id: true, title: true, status: true, budgetAmount: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+        });
+    }
+    async assertMember(orgId, userId) {
+        const m = await this.prisma.organizationMember.findFirst({
+            where: { organizationId: orgId, userId },
+        });
+        if (!m)
+            throw new common_1.ForbiddenException('Not a member of this organization');
     }
     async assertAdminOrOwner(orgId, userId) {
         const m = await this.prisma.organizationMember.findFirst({

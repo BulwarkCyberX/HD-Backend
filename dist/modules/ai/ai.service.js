@@ -105,9 +105,9 @@ let AiService = AiService_1 = class AiService {
     async classifyRisk(input, userId) {
         await this.rateLimit(userId);
         if (!this.client) {
-            return { label: 'UNKNOWN', rationale: 'Configure OPENAI_API_KEY for live classification.' };
+            return this.mockRiskClassification(input);
         }
-        return this.completeJson(userId, client_1.AiJobType.RISK_CLASSIFICATION, 'Classify security risk. JSON keys: label (LOW|MEDIUM|HIGH|CRITICAL), rationale (string).', JSON.stringify(input));
+        return this.completeJson(userId, client_1.AiJobType.RISK_CLASSIFICATION, 'Classify security risk for a pentest report. JSON keys: label (LOW|MEDIUM|HIGH|CRITICAL only), rationale (string).', JSON.stringify(input));
     }
     async duplicateHint(a, b, userId) {
         await this.rateLimit(userId);
@@ -142,6 +142,23 @@ let AiService = AiService_1 = class AiService {
             suggestionsOnly: true,
             improved: `${trimmed}\n\n---\nSuggested additions:\n- Methodology\n- Deliverables`,
             hints: ['Methodology', 'Deliverables'],
+        };
+    }
+    mockRiskClassification(input) {
+        const text = `${input.title} ${input.description}`.toLowerCase();
+        let label = client_1.ReportSeverity.MEDIUM;
+        if (text.includes('rce') || text.includes('critical') || text.includes('auth bypass')) {
+            label = client_1.ReportSeverity.CRITICAL;
+        }
+        else if (text.includes('sql') || text.includes('xss') || text.includes('high')) {
+            label = client_1.ReportSeverity.HIGH;
+        }
+        else if (text.includes('info') || text.includes('low')) {
+            label = client_1.ReportSeverity.LOW;
+        }
+        return {
+            label,
+            rationale: 'Heuristic mock severity (set OPENAI_API_KEY for live triage).',
         };
     }
     mockReview(input) {

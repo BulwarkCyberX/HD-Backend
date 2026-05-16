@@ -132,6 +132,21 @@ enum LedgerEntryType {
   MILESTONE_FUND
   MILESTONE_RELEASE
   MILESTONE_REJECT_REFUND
+  HOURLY_BILL
+}
+
+enum TimeEntryStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  BILLED
+}
+
+enum HourlyEngagementStatus {
+  ACTIVE
+  PAUSED
+  CLOSED
 }
 
 enum LedgerEntryStatus {
@@ -230,6 +245,11 @@ model User {
   triagedReports Report[] @relation("ReportValidatedBy")
   reviewsGiven   Review[] @relation("ReviewClient")
   reviewsReceived Review[] @relation("ReviewProvider")
+  clientReviewsGiven   ClientReview[] @relation("ClientReviewProvider")
+  clientReviewsReceived ClientReview[] @relation("ClientReviewClient")
+  timeEntries            TimeEntry[]
+  timeEntriesApproved    TimeEntry[] @relation("TimeEntryApprover")
+  userSettings           UserSettings?
   paymentsMade     Payment[] @relation("PaymentPayer")
   paymentsReceived Payment[] @relation("PaymentPayee")
 
@@ -256,6 +276,9 @@ model User {
   kycReviews                KycSubmission[]      @relation("KycReviewer")
   userSessions              UserSession[]
   paymentAuditLogs          PaymentAuditLog[]    @relation("PaymentAuditActor")
+  emailTemplatesEdited      EmailTemplate[]      @relation("EmailTemplateEditor")
+  apiKeys                   ApiKey[]
+  webhookEndpoints          WebhookEndpoint[]
 
   emailVerifiedAt              DateTime?
   emailVerificationTokenHash   String?
@@ -310,6 +333,8 @@ model ClientProfile {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   companySize String?
+  rating        Float @default(0)
+  totalReviews  Int   @default(0)
 
   createdAt   DateTime @default(now())
 }
@@ -335,6 +360,8 @@ model Project {
   messages Message[]
   reports  Report[]
   review   Review?
+  clientReview ClientReview?
+  hourlyEngagement HourlyEngagement?
   payment  Payment?
   files    FileAsset[]
   milestones ProjectMilestone[]
@@ -394,6 +421,7 @@ model Report {
   severity    ReportSeverity
   status      ReportStatus   @default(SUBMITTED)
   triageNotes String?
+  aiTriageHints Json?
   validatedBy String?
   validator   User?          @relation("ReportValidatedBy", fields: [validatedBy], references: [id], onDelete: SetNull)
   createdAt   DateTime       @default(now())
@@ -440,6 +468,69 @@ model Review {
 
   @@index([clientId])
   @@index([providerId])
+}
+
+model ClientReview {
+  id         String   @id @default(cuid())
+  projectId  String   @unique
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  providerId String
+  provider   User     @relation("ClientReviewProvider", fields: [providerId], references: [id], onDelete: Restrict)
+  clientId   String
+  client     User     @relation("ClientReviewClient", fields: [clientId], references: [id], onDelete: Restrict)
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@index([clientId])
+  @@index([providerId])
+}
+
+model HourlyEngagement {
+  id             String                 @id @default(cuid())
+  projectId      String                 @unique
+  project        Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  hourlyRate     Decimal                @db.Decimal(18, 4)
+  currency       PaymentCurrency        @default(INR)
+  weeklyCapHours Float                  @default(40)
+  status         HourlyEngagementStatus @default(ACTIVE)
+  timeEntries    TimeEntry[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+}
+
+model TimeEntry {
+  id             String          @id @default(cuid())
+  engagementId   String
+  engagement     HourlyEngagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  providerId     String
+  provider       User            @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  workDate       DateTime        @db.Date
+  hours          Decimal         @db.Decimal(8, 2)
+  description    String
+  status         TimeEntryStatus @default(DRAFT)
+  submittedAt    DateTime?
+  approvedAt     DateTime?
+  approvedById   String?
+  approvedBy     User?           @relation("TimeEntryApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  rejectedReason String?
+  billedAt       DateTime?
+  billedAmount   Decimal?        @db.Decimal(18, 4)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([engagementId])
+  @@index([providerId])
+  @@index([engagementId, status])
+}
+
+model UserSettings {
+  userId            String    @id
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailDigestWeekly Boolean   @default(true)
+  lastEmailDigestAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model BugBountyProgram {
@@ -952,4 +1043,80 @@ model UserSession {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  category    String   @default("general")
+  description String   @default("")
+  subject     String
+  title       String
+  preheader   String?
+  innerHtml   String   @db.Text
+  textBody    String   @db.Text
+  variables   String[] @default([])
+  updatedById String?
+  updatedBy   User?    @relation("EmailTemplateEditor", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
+
+// --- Phase 3: Integrations (public API keys + outbound webhooks) ---
+
+enum WebhookEventType {
+  REPORT_VALIDATED
+  MILESTONE_RELEASED
+  PAYMENT_RELEASED
+  BID_ACCEPTED
+  PROJECT_COMPLETED
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label      String
+  keyPrefix  String
+  keyHash    String    @unique
+  scopes     String[]  @default(["read"])
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model WebhookEndpoint {
+  id         String             @id @default(cuid())
+  userId     String
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label      String
+  url        String
+  secret     String
+  events     WebhookEventType[]
+  enabled    Boolean            @default(true)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+}
+
+model WebhookDelivery {
+  id           String            @id @default(cuid())
+  endpointId   String
+  endpoint     WebhookEndpoint   @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  event        WebhookEventType
+  payload      Json
+  statusCode   Int?
+  success      Boolean           @default(false)
+  errorMessage String?
+  createdAt    DateTime          @default(now())
+
+  @@index([endpointId])
+  @@index([createdAt])
 }

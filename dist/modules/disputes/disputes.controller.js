@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DisputesController = void 0;
 const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
 const client_1 = require("@prisma/client");
 const current_user_decorator_1 = require("../../auth/current-user.decorator");
 const jwt_auth_guard_1 = require("../../auth/jwt-auth.guard");
@@ -23,6 +24,7 @@ const disputes_service_1 = require("./disputes.service");
 const create_dispute_dto_1 = require("./dto/create-dispute.dto");
 const dispute_comment_dto_1 = require("./dto/dispute-comment.dto");
 const resolve_dispute_dto_1 = require("./dto/resolve-dispute.dto");
+const add_dispute_evidence_dto_1 = require("./dto/add-dispute-evidence.dto");
 let DisputesController = class DisputesController {
     constructor(disputes) {
         this.disputes = disputes;
@@ -43,6 +45,9 @@ let DisputesController = class DisputesController {
     listAdmin(user) {
         return this.disputes.listAdmin(user.role);
     }
+    getById(user, id) {
+        return this.disputes.getById({ disputeId: id, requesterId: user.userId, role: user.role });
+    }
     markReview(user, id) {
         return this.disputes.markReview({ disputeId: id, adminId: user.userId, role: user.role });
     }
@@ -53,6 +58,16 @@ let DisputesController = class DisputesController {
             role: user.role,
             status: dto.status,
             resolution: dto.resolution,
+            processEscrowRefund: dto.processEscrowRefund,
+        });
+    }
+    addEvidence(user, id, dto) {
+        return this.disputes.addEvidence({
+            disputeId: id,
+            requesterId: user.userId,
+            role: user.role,
+            fileAssetId: dto.fileAssetId,
+            note: dto.note,
         });
     }
     addComment(user, id, dto) {
@@ -68,6 +83,7 @@ let DisputesController = class DisputesController {
 exports.DisputesController = DisputesController;
 __decorate([
     (0, common_1.Post)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Open a dispute on a project' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -91,6 +107,15 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], DisputesController.prototype, "listAdmin", null);
 __decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Dispute detail with comments and evidence' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], DisputesController.prototype, "getById", null);
+__decorate([
     (0, common_1.Patch)('admin/:id/review'),
     (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -110,6 +135,15 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], DisputesController.prototype, "resolve", null);
 __decorate([
+    (0, common_1.Post)(':id/evidence'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, add_dispute_evidence_dto_1.AddDisputeEvidenceDto]),
+    __metadata("design:returntype", void 0)
+], DisputesController.prototype, "addEvidence", null);
+__decorate([
     (0, common_1.Post)(':id/comments'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id')),
@@ -119,6 +153,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], DisputesController.prototype, "addComment", null);
 exports.DisputesController = DisputesController = __decorate([
+    (0, swagger_1.ApiTags)('disputes'),
+    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('disputes'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [disputes_service_1.DisputesService])

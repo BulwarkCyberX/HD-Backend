@@ -1,6 +1,14 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ProjectStatus, ReportStatus, UserRole, type BudgetType, type ProjectVisibility } from '@prisma/client';
+import {
+  ProjectStatus,
+  ReportStatus,
+  UserRole,
+  WebhookEventType,
+  type BudgetType,
+  type ProjectVisibility,
+} from '@prisma/client';
+import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
 import { TransactionalEmailService } from '../email/transactional-email.service';
 
 @Injectable()
@@ -8,6 +16,7 @@ export class ProjectsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly transactional: TransactionalEmailService,
+    private readonly webhooks: WebhookDispatcherService,
   ) {}
 
   private readonly projectSelect = {
@@ -40,6 +49,16 @@ export class ProjectsService {
       },
     },
     review: {
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        clientId: true,
+        providerId: true,
+        createdAt: true,
+      },
+    },
+    clientReview: {
       select: {
         id: true,
         rating: true,
@@ -158,11 +177,24 @@ export class ProjectsService {
       );
     }
 
-    return await this.prisma.project.update({
+    const updated = await this.prisma.project.update({
       where: { id: input.projectId },
       data: { status: ProjectStatus.COMPLETED },
       select: this.projectSelect,
     });
+
+    void this.webhooks.dispatch(project.clientId, WebhookEventType.PROJECT_COMPLETED, {
+      projectId: updated.id,
+      title: updated.title,
+    });
+    if (updated.selectedProviderId) {
+      void this.webhooks.dispatch(updated.selectedProviderId, WebhookEventType.PROJECT_COMPLETED, {
+        projectId: updated.id,
+        title: updated.title,
+      });
+    }
+
+    return updated;
   }
 }
 

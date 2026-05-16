@@ -18,10 +18,10 @@ export declare class BountyService {
         allowedResearcherIds?: string[];
     }): Promise<{
         id: string;
+        description: string;
+        title: string;
         createdAt: Date;
         scope: import("@prisma/client/runtime/library").JsonValue;
-        title: string;
-        description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
@@ -32,10 +32,10 @@ export declare class BountyService {
         role: UserRole;
     }): Promise<{
         id: string;
+        description: string;
+        title: string;
         createdAt: Date;
         scope: import("@prisma/client/runtime/library").JsonValue;
-        title: string;
-        description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
@@ -47,10 +47,10 @@ export declare class BountyService {
         role: UserRole;
     }): Promise<{
         id: string;
+        description: string;
+        title: string;
         createdAt: Date;
         scope: import("@prisma/client/runtime/library").JsonValue;
-        title: string;
-        description: string;
         status: import(".prisma/client").$Enums.BugBountyProgramStatus;
         clientId: string;
         rewardTable: import("@prisma/client/runtime/library").JsonValue;
@@ -65,9 +65,9 @@ export declare class BountyService {
         severity: ReportSeverity;
     }): Promise<{
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         status: import(".prisma/client").$Enums.BugReportStatus;
         files: {
             id: string;
@@ -90,9 +90,9 @@ export declare class BountyService {
         role: UserRole;
     }): Promise<{
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         status: import(".prisma/client").$Enums.BugReportStatus;
         files: {
             id: string;
@@ -116,9 +116,9 @@ export declare class BountyService {
         status: BugReportStatus;
     }): Promise<{
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         status: import(".prisma/client").$Enums.BugReportStatus;
         files: {
             id: string;

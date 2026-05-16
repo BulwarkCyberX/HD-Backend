@@ -14,10 +14,10 @@ export declare class PaymentAuditService {
         id: string;
         createdAt: Date;
         provider: import(".prisma/client").$Enums.PspProviderName | null;
+        payload: Prisma.JsonValue | null;
         actorUserId: string | null;
         eventType: string;
         providerEventId: string | null;
-        payload: Prisma.JsonValue | null;
         sessionId: string | null;
     } | null>;
 }

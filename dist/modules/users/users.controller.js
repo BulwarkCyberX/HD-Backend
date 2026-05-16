@@ -14,15 +14,24 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
 const jwt_auth_guard_1 = require("../../auth/jwt-auth.guard");
 const current_user_decorator_1 = require("../../auth/current-user.decorator");
 const users_service_1 = require("./users.service");
+const update_provider_profile_dto_1 = require("./dto/update-provider-profile.dto");
+const update_user_settings_dto_1 = require("./dto/update-user-settings.dto");
 let UsersController = class UsersController {
     constructor(users) {
         this.users = users;
     }
     me(user) {
         return this.users.getMe(user.userId);
+    }
+    updateProviderProfile(user, dto) {
+        return this.users.updateProviderProfile(user.userId, user.role, dto);
+    }
+    updateSettings(user, dto) {
+        return this.users.updateSettings(user.userId, dto);
     }
     providerProfile(id) {
         return this.users.getProviderProfile(id);
@@ -40,6 +49,24 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "me", null);
 __decorate([
+    (0, common_1.Patch)('me/provider-profile'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update provider bio, portfolio, skills, availability' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_provider_profile_dto_1.UpdateProviderProfileDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "updateProviderProfile", null);
+__decorate([
+    (0, common_1.Patch)('me/settings'),
+    (0, swagger_1.ApiOperation)({ summary: 'Notification preferences' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_user_settings_dto_1.UpdateUserSettingsDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "updateSettings", null);
+__decorate([
     (0, common_1.Get)('provider/:id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -55,6 +82,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "byId", null);
 exports.UsersController = UsersController = __decorate([
+    (0, swagger_1.ApiTags)('auth'),
+    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [users_service_1.UsersService])

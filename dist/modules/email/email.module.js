@@ -11,13 +11,14 @@ const common_1 = require("@nestjs/common");
 const app_mail_service_1 = require("./app-mail.service");
 const notification_email_service_1 = require("./notification-email.service");
 const transactional_email_service_1 = require("./transactional-email.service");
+const email_template_service_1 = require("./email-template.service");
 let EmailModule = class EmailModule {
 };
 exports.EmailModule = EmailModule;
 exports.EmailModule = EmailModule = __decorate([
     (0, common_1.Module)({
-        providers: [app_mail_service_1.AppMailService, notification_email_service_1.NotificationEmailService, transactional_email_service_1.TransactionalEmailService],
-        exports: [app_mail_service_1.AppMailService, notification_email_service_1.NotificationEmailService, transactional_email_service_1.TransactionalEmailService],
+        providers: [app_mail_service_1.AppMailService, notification_email_service_1.NotificationEmailService, transactional_email_service_1.TransactionalEmailService, email_template_service_1.EmailTemplateService],
+        exports: [app_mail_service_1.AppMailService, notification_email_service_1.NotificationEmailService, transactional_email_service_1.TransactionalEmailService, email_template_service_1.EmailTemplateService],
     })
 ], EmailModule);
 //# sourceMappingURL=email.module.js.map

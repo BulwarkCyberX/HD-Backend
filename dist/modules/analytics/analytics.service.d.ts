@@ -7,6 +7,12 @@ export declare class AnalyticsService {
         projects: number;
         releasedPaymentsGross: number;
         activeDisputes: number;
+        pendingKyc: number;
+        pendingWithdrawals: number;
+        projectsByStatus: {
+            status: import(".prisma/client").$Enums.ProjectStatus;
+            count: number;
+        }[];
         platformWallet: {
             availableBalance: string;
             lifetimeEarnings: string;

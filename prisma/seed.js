@@ -75,6 +75,24 @@ async function main() {
     clientProfile: false,
   });
 
+  const providerEmail = process.env.SEED_PROVIDER_EMAIL || 'provider@hackersdeal.com';
+  const providerPassword = process.env.SEED_PROVIDER_PASSWORD || 'Provider12345!';
+  const providerUser = await upsertSeedUser({
+    email: providerEmail,
+    password: providerPassword,
+    role: UserRole.PROVIDER,
+    firstName: 'Demo',
+    lastName: 'Researcher',
+    clientProfile: false,
+  });
+  await prisma.providerProfile.upsert({
+    where: { userId: providerUser.id },
+    update: {},
+    create: { userId: providerUser.id, bidCredits: 50 },
+  });
+
+  // Email templates are upserted on API boot via EmailTemplateService.ensureDefaults()
+
   console.log('Seed complete');
   console.log('');
   console.log('Demo client (CLIENT role):');
@@ -86,6 +104,11 @@ async function main() {
   console.log(`  Email:    ${adminEmail}`);
   console.log(`  Password: ${adminPassword}`);
   console.log(`  User ID:  ${adminUser.id}`);
+  console.log('');
+  console.log('Demo provider (PROVIDER role):');
+  console.log(`  Email:    ${providerEmail}`);
+  console.log(`  Password: ${providerPassword}`);
+  console.log(`  User ID:  ${providerUser.id}`);
 }
 
 main()

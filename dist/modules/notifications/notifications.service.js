@@ -68,6 +68,49 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             data: { read: true },
         });
     }
+    async sendWeeklyDigests() {
+        const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const users = await this.prisma.user.findMany({
+            select: {
+                id: true,
+                email: true,
+                firstName: true,
+                userSettings: { select: { emailDigestWeekly: true, lastEmailDigestAt: true } },
+            },
+        });
+        let sent = 0;
+        for (const user of users) {
+            const enabled = user.userSettings?.emailDigestWeekly ?? true;
+            if (!enabled || !user.email)
+                continue;
+            if (user.userSettings?.lastEmailDigestAt && user.userSettings.lastEmailDigestAt > since) {
+                continue;
+            }
+            const items = await this.prisma.notification.findMany({
+                where: { userId: user.id, createdAt: { gte: since } },
+                orderBy: { createdAt: 'desc' },
+                take: 25,
+            });
+            if (items.length === 0)
+                continue;
+            await this.notificationEmail.sendWeeklyDigestEmail({
+                toEmail: user.email,
+                firstName: user.firstName ?? 'there',
+                items: items.map((n) => ({
+                    type: n.type,
+                    message: n.message,
+                    createdAt: n.createdAt,
+                })),
+            });
+            await this.prisma.userSettings.upsert({
+                where: { userId: user.id },
+                create: { userId: user.id, lastEmailDigestAt: new Date() },
+                update: { lastEmailDigestAt: new Date() },
+            });
+            sent += 1;
+        }
+        return { sent, since: since.toISOString() };
+    }
 };
 exports.NotificationsService = NotificationsService;
 exports.NotificationsService = NotificationsService = NotificationsService_1 = __decorate([

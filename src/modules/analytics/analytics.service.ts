@@ -7,11 +7,15 @@ export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async adminSummary() {
-    const [users, projects, payments, disputes] = await Promise.all([
+    const [users, projects, payments, disputes, pendingKyc, pendingWithdrawals, projectsByStatus] =
+      await Promise.all([
       this.prisma.user.count(),
       this.prisma.project.count(),
       this.prisma.payment.aggregate({ _sum: { amount: true }, where: { status: PaymentStatus.RELEASED } }),
       this.prisma.dispute.count({ where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } } }),
+      this.prisma.kycSubmission.count({ where: { status: 'PENDING' } }),
+      this.prisma.withdrawalRequest.count({ where: { status: 'PENDING' } }),
+      this.prisma.project.groupBy({ by: ['status'], _count: { id: true } }),
     ]);
     const platform = await this.prisma.platformWallet.findFirst({
       select: { availableBalance: true, lifetimeEarnings: true, currency: true },
@@ -21,6 +25,9 @@ export class AnalyticsService {
       projects,
       releasedPaymentsGross: payments._sum.amount ?? 0,
       activeDisputes: disputes,
+      pendingKyc,
+      pendingWithdrawals,
+      projectsByStatus: projectsByStatus.map((r) => ({ status: r.status, count: r._count.id })),
       platformWallet: platform
         ? {
             availableBalance: platform.availableBalance.toString(),

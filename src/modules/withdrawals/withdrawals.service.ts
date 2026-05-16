@@ -63,7 +63,10 @@ export class WithdrawalsService {
     return this.prisma.withdrawalRequest.findMany({
       where: { status: WithdrawalRequestStatus.PENDING },
       orderBy: { createdAt: 'asc' },
-      select: this.select,
+      select: {
+        ...this.select,
+        user: { select: { id: true, email: true, firstName: true, lastName: true } },
+      },
     });
   }
 
@@ -102,7 +105,7 @@ export class WithdrawalsService {
     if (input.role !== UserRole.ADMIN) throw new ForbiddenException('Admin only');
     const w = await this.prisma.withdrawalRequest.findUnique({
       where: { id: input.withdrawalId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, userId: true, amount: true, currency: true },
     });
     if (!w) throw new NotFoundException('Withdrawal not found');
     if (w.status !== WithdrawalRequestStatus.PENDING) {

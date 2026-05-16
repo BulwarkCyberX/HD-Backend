@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MilestonesService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
+const webhook_dispatcher_service_1 = require("../integrations/webhook-dispatcher.service");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const wallet_service_1 = require("../wallets/wallet.service");
 const domain_events_service_1 = require("../realtime/domain-events.service");
@@ -23,10 +24,11 @@ const fundedLike = [
     client_1.MilestoneStatus.RELEASED,
 ];
 let MilestonesService = class MilestonesService {
-    constructor(prisma, wallets, events) {
+    constructor(prisma, wallets, events, webhooks) {
         this.prisma = prisma;
         this.wallets = wallets;
         this.events = events;
+        this.webhooks = webhooks;
         this.select = {
             id: true,
             projectId: true,
@@ -254,6 +256,11 @@ let MilestonesService = class MilestonesService {
             return row;
         });
         this.emitMilestone(released);
+        void this.webhooks.dispatch(project.clientId, client_1.WebhookEventType.MILESTONE_RELEASED, {
+            milestoneId: released.id,
+            projectId: m.projectId,
+            amount: gross.toString(),
+        });
         return released;
     }
     async reject(input) {
@@ -384,6 +391,7 @@ exports.MilestonesService = MilestonesService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         wallet_service_1.WalletService,
-        domain_events_service_1.DomainEventsService])
+        domain_events_service_1.DomainEventsService,
+        webhook_dispatcher_service_1.WebhookDispatcherService])
 ], MilestonesService);
 //# sourceMappingURL=milestones.service.js.map

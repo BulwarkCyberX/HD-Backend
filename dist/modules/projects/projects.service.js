@@ -13,11 +13,13 @@ exports.ProjectsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const client_1 = require("@prisma/client");
+const webhook_dispatcher_service_1 = require("../integrations/webhook-dispatcher.service");
 const transactional_email_service_1 = require("../email/transactional-email.service");
 let ProjectsService = class ProjectsService {
-    constructor(prisma, transactional) {
+    constructor(prisma, transactional, webhooks) {
         this.prisma = prisma;
         this.transactional = transactional;
+        this.webhooks = webhooks;
         this.projectSelect = {
             id: true,
             title: true,
@@ -48,6 +50,16 @@ let ProjectsService = class ProjectsService {
                 },
             },
             review: {
+                select: {
+                    id: true,
+                    rating: true,
+                    comment: true,
+                    clientId: true,
+                    providerId: true,
+                    createdAt: true,
+                },
+            },
+            clientReview: {
                 select: {
                     id: true,
                     rating: true,
@@ -141,17 +153,29 @@ let ProjectsService = class ProjectsService {
         if (validReportsCount === 0 && !input.explicitClientConfirmation) {
             throw new common_1.BadRequestException('No validated report found. Pass explicitClientConfirmation=true to complete project anyway.');
         }
-        return await this.prisma.project.update({
+        const updated = await this.prisma.project.update({
             where: { id: input.projectId },
             data: { status: client_1.ProjectStatus.COMPLETED },
             select: this.projectSelect,
         });
+        void this.webhooks.dispatch(project.clientId, client_1.WebhookEventType.PROJECT_COMPLETED, {
+            projectId: updated.id,
+            title: updated.title,
+        });
+        if (updated.selectedProviderId) {
+            void this.webhooks.dispatch(updated.selectedProviderId, client_1.WebhookEventType.PROJECT_COMPLETED, {
+                projectId: updated.id,
+                title: updated.title,
+            });
+        }
+        return updated;
     }
 };
 exports.ProjectsService = ProjectsService;
 exports.ProjectsService = ProjectsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        transactional_email_service_1.TransactionalEmailService])
+        transactional_email_service_1.TransactionalEmailService,
+        webhook_dispatcher_service_1.WebhookDispatcherService])
 ], ProjectsService);
 //# sourceMappingURL=projects.service.js.map

@@ -38,6 +38,13 @@ let ReportsController = class ReportsController {
     listAllForAdmin(user) {
         return this.reports.listAllForAdmin({ requesterRole: user.role });
     }
+    runAiTriage(user, id) {
+        return this.reports.runAiTriage({
+            reportId: id,
+            requesterId: user.userId,
+            requesterRole: user.role,
+        });
+    }
     listByProject(user, projectId) {
         return this.reports.listByProject({
             projectId,
@@ -72,6 +79,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ReportsController.prototype, "listAllForAdmin", null);
+__decorate([
+    (0, common_1.Post)(':id/ai-triage'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ReportsController.prototype, "runAiTriage", null);
 __decorate([
     (0, common_1.Get)(':projectId'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),

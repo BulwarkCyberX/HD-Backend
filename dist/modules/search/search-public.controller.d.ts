@@ -4,8 +4,8 @@ export declare class SearchPublicController {
     constructor(search: SearchService);
     projects(q?: string): Promise<{
         id: string;
-        createdAt: Date;
         title: string;
+        createdAt: Date;
         budgetAmount: number;
         status: import(".prisma/client").$Enums.ProjectStatus;
     }[]>;
@@ -21,8 +21,8 @@ export declare class SearchPublicController {
     }[]>;
     trendingProjects(): Promise<{
         id: string;
-        createdAt: Date;
         title: string;
+        createdAt: Date;
         budgetAmount: number;
         status: import(".prisma/client").$Enums.ProjectStatus;
     }[]>;

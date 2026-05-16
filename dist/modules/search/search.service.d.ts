@@ -7,8 +7,8 @@ export declare class SearchService {
         q: string;
     }): Promise<{
         id: string;
-        createdAt: Date;
         title: string;
+        createdAt: Date;
         budgetAmount: number;
         status: import(".prisma/client").$Enums.ProjectStatus;
     }[]>;
@@ -18,8 +18,8 @@ export declare class SearchService {
         role: UserRole;
     }): Promise<{
         id: string;
-        createdAt: Date;
         title: string;
+        createdAt: Date;
         budgetType: import(".prisma/client").$Enums.BudgetType;
         budgetAmount: number;
         visibility: import(".prisma/client").$Enums.ProjectVisibility;
@@ -53,8 +53,8 @@ export declare class SearchService {
     }>;
     trendingProjects(): Promise<{
         id: string;
-        createdAt: Date;
         title: string;
+        createdAt: Date;
         budgetAmount: number;
         status: import(".prisma/client").$Enums.ProjectStatus;
     }[]>;

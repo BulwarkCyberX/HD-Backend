@@ -117,4 +117,80 @@ export class ReviewsService {
       return created;
     });
   }
+
+  async createClientReview(input: {
+    requesterId: string;
+    role: UserRole;
+    projectId: string;
+    rating: number;
+    comment?: string;
+  }) {
+    if (input.role !== UserRole.PROVIDER) {
+      throw new ForbiddenException('Only providers can review clients');
+    }
+
+    const project = await this.prisma.project.findUnique({
+      where: { id: input.projectId },
+      select: {
+        id: true,
+        clientId: true,
+        selectedProviderId: true,
+        status: true,
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+    if (project.selectedProviderId !== input.requesterId) {
+      throw new ForbiddenException('Only the assigned provider can review the client');
+    }
+    if (project.status !== ProjectStatus.COMPLETED) {
+      throw new BadRequestException('Review can be submitted only after project completion');
+    }
+
+    const existing = await this.prisma.clientReview.findUnique({
+      where: { projectId: input.projectId },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new BadRequestException('You already reviewed this client for this project');
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      const created = await tx.clientReview.create({
+        data: {
+          projectId: input.projectId,
+          providerId: input.requesterId,
+          clientId: project.clientId,
+          rating: input.rating,
+          comment: input.comment,
+        },
+        select: {
+          id: true,
+          projectId: true,
+          clientId: true,
+          providerId: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+        },
+      });
+
+      const ratings = await tx.clientReview.findMany({
+        where: { clientId: project.clientId },
+        select: { rating: true },
+      });
+      const totalReviews = ratings.length;
+      const averageRating =
+        totalReviews === 0
+          ? 0
+          : ratings.reduce((acc, row) => acc + row.rating, 0) / totalReviews;
+
+      await tx.clientProfile.upsert({
+        where: { userId: project.clientId },
+        create: { userId: project.clientId, rating: averageRating, totalReviews },
+        update: { rating: averageRating, totalReviews },
+      });
+
+      return created;
+    });
+  }
 }

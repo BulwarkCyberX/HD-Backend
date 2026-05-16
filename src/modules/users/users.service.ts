@@ -19,11 +19,32 @@ export class UsersService {
         entity: { select: { id: true, type: true, name: true, verificationStatus: true, createdAt: true } },
         providerProfile: true,
         clientProfile: true,
+        userSettings: true,
       },
     });
     if (!user) throw new NotFoundException('User not found');
-    const { emailVerifiedAt, ...rest } = user;
-    return { ...rest, emailVerified: !!emailVerifiedAt };
+    const { emailVerifiedAt, userSettings, ...rest } = user;
+    return {
+      ...rest,
+      emailVerified: !!emailVerifiedAt,
+      settings: userSettings ?? { emailDigestWeekly: true, lastEmailDigestAt: null },
+    };
+  }
+
+  async updateSettings(userId: string, input: { emailDigestWeekly?: boolean }) {
+    const settings = await this.prisma.userSettings.upsert({
+      where: { userId },
+      create: {
+        userId,
+        emailDigestWeekly: input.emailDigestWeekly ?? true,
+      },
+      update: {
+        ...(input.emailDigestWeekly !== undefined
+          ? { emailDigestWeekly: input.emailDigestWeekly }
+          : {}),
+      },
+    });
+    return settings;
   }
 
   async getById(requester: { userId: string; role: UserRole }, id: string) {
@@ -71,6 +92,37 @@ export class UsersService {
       throw new NotFoundException('Provider profile not found');
     }
     return user;
+  }
+
+  async updateProviderProfile(
+    userId: string,
+    role: UserRole,
+    input: {
+      bio?: string;
+      portfolio?: unknown;
+      availabilityStatus?: string;
+      skills?: string[];
+      certifications?: string[];
+    },
+  ) {
+    if (role !== UserRole.PROVIDER) {
+      throw new ForbiddenException('Only providers can update provider profile');
+    }
+    const profile = await this.prisma.providerProfile.findUnique({ where: { userId } });
+    if (!profile) throw new NotFoundException('Provider profile not found');
+    await this.prisma.providerProfile.update({
+      where: { userId },
+      data: {
+        ...(input.bio !== undefined ? { bio: input.bio } : {}),
+        ...(input.portfolio !== undefined ? { portfolio: input.portfolio as object } : {}),
+        ...(input.availabilityStatus !== undefined
+          ? { availabilityStatus: input.availabilityStatus }
+          : {}),
+        ...(input.skills !== undefined ? { skills: input.skills } : {}),
+        ...(input.certifications !== undefined ? { certifications: input.certifications } : {}),
+      },
+    });
+    return this.getMe(userId);
   }
 }
 

@@ -1,4 +1,6 @@
 import { UserRole } from '@prisma/client';
+import { HourlyService } from '../hourly/hourly.service';
+import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TransactionalEmailService } from '../email/transactional-email.service';
@@ -8,7 +10,9 @@ export declare class BidsService {
     private readonly notifications;
     private readonly transactional;
     private readonly events;
-    constructor(prisma: PrismaService, notifications: NotificationsService, transactional: TransactionalEmailService, events: DomainEventsService);
+    private readonly hourly;
+    private readonly webhooks;
+    constructor(prisma: PrismaService, notifications: NotificationsService, transactional: TransactionalEmailService, events: DomainEventsService, hourly: HourlyService, webhooks: WebhookDispatcherService);
     private readonly bidSelect;
     create(input: {
         providerId: string;
@@ -101,7 +105,30 @@ export declare class BidsService {
         role: UserRole;
         bidId: string;
         status: 'ACCEPTED' | 'REJECTED';
+        skipOwnershipCheck?: boolean;
     }): Promise<{
+        id: string;
+        createdAt: Date;
+        provider: {
+            providerProfile: {
+                rating: number;
+                totalReviews: number;
+                completedProjects: number;
+                validReportCount: number;
+                reputationScore: number;
+                bidCredits: number;
+            } | null;
+            email: string;
+            id: string;
+        };
+        timeline: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        projectId: string;
+        providerId: string;
+        proposal: string;
+        price: number;
+    }>;
+    acceptBidAsAdmin(bidId: string): Promise<{
         id: string;
         createdAt: Date;
         provider: {

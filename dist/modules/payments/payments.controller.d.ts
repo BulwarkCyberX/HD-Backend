@@ -6,23 +6,23 @@ export declare class PaymentsController {
     private readonly payments;
     constructor(payments: PaymentsService);
     deposit(user: RequestUser, dto: DepositPaymentDto): Promise<{
+        amount: number;
         id: string;
         createdAt: Date;
         status: import(".prisma/client").$Enums.PaymentStatus;
         projectId: string;
         payerId: string;
         payeeId: string;
-        amount: number;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
     }>;
     release(user: RequestUser, dto: ReleasePaymentDto): Promise<{
+        amount: number;
         id: string;
         createdAt: Date;
         status: import(".prisma/client").$Enums.PaymentStatus;
         projectId: string;
         payerId: string;
         payeeId: string;
-        amount: number;
         currency: import(".prisma/client").$Enums.PaymentCurrency;
     }>;
 }

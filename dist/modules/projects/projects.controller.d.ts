@@ -7,10 +7,10 @@ export declare class ProjectsController {
     constructor(projects: ProjectsService);
     create(user: RequestUser, dto: CreateProjectDto): Promise<{
         payment: {
+            amount: number;
             id: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.PaymentStatus;
-            amount: number;
             currency: import(".prisma/client").$Enums.PaymentCurrency;
         } | null;
         review: {
@@ -21,10 +21,18 @@ export declare class ProjectsController {
             providerId: string;
             comment: string | null;
         } | null;
+        clientReview: {
+            id: string;
+            createdAt: Date;
+            rating: number;
+            clientId: string;
+            providerId: string;
+            comment: string | null;
+        } | null;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         assets: import("@prisma/client/runtime/library").JsonValue;
         inScope: string[];
         outOfScope: string[];
@@ -50,10 +58,10 @@ export declare class ProjectsController {
     }>;
     listAll(): Promise<{
         payment: {
+            amount: number;
             id: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.PaymentStatus;
-            amount: number;
             currency: import(".prisma/client").$Enums.PaymentCurrency;
         } | null;
         review: {
@@ -64,10 +72,18 @@ export declare class ProjectsController {
             providerId: string;
             comment: string | null;
         } | null;
+        clientReview: {
+            id: string;
+            createdAt: Date;
+            rating: number;
+            clientId: string;
+            providerId: string;
+            comment: string | null;
+        } | null;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         assets: import("@prisma/client/runtime/library").JsonValue;
         inScope: string[];
         outOfScope: string[];
@@ -93,10 +109,10 @@ export declare class ProjectsController {
     }[]>;
     getById(id: string): Promise<{
         payment: {
+            amount: number;
             id: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.PaymentStatus;
-            amount: number;
             currency: import(".prisma/client").$Enums.PaymentCurrency;
         } | null;
         review: {
@@ -107,10 +123,18 @@ export declare class ProjectsController {
             providerId: string;
             comment: string | null;
         } | null;
+        clientReview: {
+            id: string;
+            createdAt: Date;
+            rating: number;
+            clientId: string;
+            providerId: string;
+            comment: string | null;
+        } | null;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         assets: import("@prisma/client/runtime/library").JsonValue;
         inScope: string[];
         outOfScope: string[];
@@ -136,10 +160,10 @@ export declare class ProjectsController {
     }>;
     complete(user: RequestUser, id: string, dto: CompleteProjectDto): Promise<{
         payment: {
+            amount: number;
             id: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.PaymentStatus;
-            amount: number;
             currency: import(".prisma/client").$Enums.PaymentCurrency;
         } | null;
         review: {
@@ -150,10 +174,18 @@ export declare class ProjectsController {
             providerId: string;
             comment: string | null;
         } | null;
+        clientReview: {
+            id: string;
+            createdAt: Date;
+            rating: number;
+            clientId: string;
+            providerId: string;
+            comment: string | null;
+        } | null;
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         assets: import("@prisma/client/runtime/library").JsonValue;
         inScope: string[];
         outOfScope: string[];

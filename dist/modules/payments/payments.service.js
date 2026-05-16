@@ -12,16 +12,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentsService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
+const webhook_dispatcher_service_1 = require("../integrations/webhook-dispatcher.service");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const wallet_service_1 = require("../wallets/wallet.service");
 const platform_fee_service_1 = require("../wallets/platform-fee.service");
 let PaymentsService = class PaymentsService {
-    constructor(prisma, notifications, wallets, platformFees) {
+    constructor(prisma, notifications, wallets, platformFees, webhooks) {
         this.prisma = prisma;
         this.notifications = notifications;
         this.wallets = wallets;
         this.platformFees = platformFees;
+        this.webhooks = webhooks;
         this.paymentSelect = {
             id: true,
             projectId: true,
@@ -130,8 +132,8 @@ let PaymentsService = class PaymentsService {
         });
         const escrowBal = clientWallet?.escrowBalance ?? new client_1.Prisma.Decimal(0);
         const gross = payAmt.lt(escrowBal) ? payAmt : escrowBal;
-        return await this.prisma.$transaction(async (tx) => {
-            const released = await tx.payment.update({
+        const released = await this.prisma.$transaction(async (tx) => {
+            const row = await tx.payment.update({
                 where: { projectId: input.projectId },
                 data: { status: client_1.PaymentStatus.RELEASED },
                 select: this.paymentSelect,
@@ -158,12 +160,27 @@ let PaymentsService = class PaymentsService {
                 });
             }
             await this.notifications.create({
-                userId: released.payeeId,
+                userId: row.payeeId,
                 type: client_1.NotificationType.PAYMENT_RELEASED,
-                message: `Escrow payment released for project ${released.projectId}`,
+                message: `Escrow payment released for project ${row.projectId}`,
             });
-            return released;
+            return row;
         });
+        void this.webhooks.dispatch(project.clientId, client_1.WebhookEventType.PAYMENT_RELEASED, {
+            projectId: released.projectId,
+            paymentId: released.id,
+            amount: released.amount,
+            currency: released.currency,
+        });
+        if (released.payeeId) {
+            void this.webhooks.dispatch(released.payeeId, client_1.WebhookEventType.PAYMENT_RELEASED, {
+                projectId: released.projectId,
+                paymentId: released.id,
+                amount: released.amount,
+                currency: released.currency,
+            });
+        }
+        return released;
     }
 };
 exports.PaymentsService = PaymentsService;
@@ -172,6 +189,7 @@ exports.PaymentsService = PaymentsService = __decorate([
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notifications_service_1.NotificationsService,
         wallet_service_1.WalletService,
-        platform_fee_service_1.PlatformFeeService])
+        platform_fee_service_1.PlatformFeeService,
+        webhook_dispatcher_service_1.WebhookDispatcherService])
 ], PaymentsService);
 //# sourceMappingURL=payments.service.js.map

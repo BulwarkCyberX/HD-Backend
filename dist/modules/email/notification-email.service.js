@@ -29,6 +29,17 @@ let NotificationEmailService = class NotificationEmailService {
             message: input.message,
         });
     }
+    async sendWeeklyDigestEmail(input) {
+        if (!this.mail.isEnabled())
+            return;
+        if (!input.toEmail)
+            return;
+        await this.transactional.sendWeeklyDigest({
+            to: input.toEmail,
+            firstName: input.firstName,
+            items: input.items,
+        });
+    }
 };
 exports.NotificationEmailService = NotificationEmailService;
 exports.NotificationEmailService = NotificationEmailService = __decorate([

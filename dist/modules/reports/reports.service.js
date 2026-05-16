@@ -15,11 +15,16 @@ const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const domain_events_service_1 = require("../realtime/domain-events.service");
+const ai_triage_service_1 = require("../ai/ai-triage.service");
+const webhook_dispatcher_service_1 = require("../integrations/webhook-dispatcher.service");
+const client_2 = require("@prisma/client");
 let ReportsService = class ReportsService {
-    constructor(prisma, notifications, events) {
+    constructor(prisma, notifications, events, aiTriage, webhooks) {
         this.prisma = prisma;
         this.notifications = notifications;
         this.events = events;
+        this.aiTriage = aiTriage;
+        this.webhooks = webhooks;
         this.reportSelect = {
             id: true,
             projectId: true,
@@ -29,6 +34,7 @@ let ReportsService = class ReportsService {
             severity: true,
             status: true,
             triageNotes: true,
+            aiTriageHints: true,
             validatedBy: true,
             createdAt: true,
             submitter: { select: { id: true, email: true, role: true } },
@@ -86,7 +92,20 @@ let ReportsService = class ReportsService {
             message: `New security report submitted on "${created.project.title}"`,
         });
         this.events.reportUpdated({ projectId: input.projectId, report: created });
+        void this.aiTriage.runForReport(created.id, input.submittedBy).catch(() => undefined);
         return created;
+    }
+    async runAiTriage(input) {
+        if (input.requesterRole !== client_1.UserRole.ADMIN) {
+            throw new common_1.ForbiddenException('Only admin can run AI triage');
+        }
+        const hints = await this.aiTriage.runForReport(input.reportId, input.requesterId);
+        if (!hints)
+            throw new common_1.NotFoundException('Report not found');
+        return this.prisma.report.findUnique({
+            where: { id: input.reportId },
+            select: this.reportSelect,
+        });
     }
     async listByProject(input) {
         const project = input.requesterRole === client_1.UserRole.ADMIN
@@ -172,6 +191,12 @@ let ReportsService = class ReportsService {
                 type: client_1.NotificationType.REPORT_VALIDATED,
                 message: `Your workspace security report was marked VALID`,
             });
+            void this.webhooks.dispatch(updated.project.clientId, client_2.WebhookEventType.REPORT_VALIDATED, {
+                reportId: updated.id,
+                projectId: updated.projectId,
+                title: updated.title,
+                severity: updated.severity,
+            });
         }
         this.events.reportUpdated({ projectId: updated.projectId, report: updated });
         return updated;
@@ -182,6 +207,8 @@ exports.ReportsService = ReportsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notifications_service_1.NotificationsService,
-        domain_events_service_1.DomainEventsService])
+        domain_events_service_1.DomainEventsService,
+        ai_triage_service_1.AiTriageService,
+        webhook_dispatcher_service_1.WebhookDispatcherService])
 ], ReportsService);
 //# sourceMappingURL=reports.service.js.map

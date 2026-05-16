@@ -12,16 +12,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BidsService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
+const hourly_service_1 = require("../hourly/hourly.service");
+const webhook_dispatcher_service_1 = require("../integrations/webhook-dispatcher.service");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const transactional_email_service_1 = require("../email/transactional-email.service");
 const domain_events_service_1 = require("../realtime/domain-events.service");
 let BidsService = class BidsService {
-    constructor(prisma, notifications, transactional, events) {
+    constructor(prisma, notifications, transactional, events, hourly, webhooks) {
         this.prisma = prisma;
         this.notifications = notifications;
         this.transactional = transactional;
         this.events = events;
+        this.hourly = hourly;
+        this.webhooks = webhooks;
         this.bidSelect = {
             id: true,
             projectId: true,
@@ -139,7 +143,7 @@ let BidsService = class BidsService {
         });
     }
     async updateStatus(input) {
-        if (input.role !== client_1.UserRole.CLIENT) {
+        if (input.role !== client_1.UserRole.CLIENT && input.role !== client_1.UserRole.ADMIN) {
             throw new common_1.ForbiddenException('Only clients can manage bids');
         }
         const bid = await this.prisma.bid.findUnique({
@@ -148,7 +152,9 @@ let BidsService = class BidsService {
         });
         if (!bid)
             throw new common_1.NotFoundException('Bid not found');
-        if (bid.project.clientId !== input.requesterId) {
+        if (!input.skipOwnershipCheck &&
+            input.role === client_1.UserRole.CLIENT &&
+            bid.project.clientId !== input.requesterId) {
             throw new common_1.ForbiddenException('Only project owner can manage bid status');
         }
         if (input.status === 'REJECTED') {
@@ -192,8 +198,52 @@ let BidsService = class BidsService {
             type: client_1.NotificationType.BID_ACCEPTED,
             message: `Your bid was accepted on "${projectTitle?.title ?? 'project'}"`,
         });
+        const projectMeta = await this.prisma.project.findUnique({
+            where: { id: updatedBid.projectId },
+            select: { budgetType: true },
+        });
+        if (projectMeta?.budgetType === client_1.BudgetType.HOURLY) {
+            await this.hourly.ensureEngagementForProject({
+                projectId: updatedBid.projectId,
+                hourlyRate: updatedBid.price,
+            });
+        }
         this.events.bidUpdated({ projectId: updatedBid.projectId, bid: updatedBid });
+        const projectRow = await this.prisma.project.findUnique({
+            where: { id: updatedBid.projectId },
+            select: { clientId: true },
+        });
+        if (projectRow) {
+            void this.webhooks.dispatch(projectRow.clientId, client_1.WebhookEventType.BID_ACCEPTED, {
+                projectId: updatedBid.projectId,
+                bidId: updatedBid.id,
+                providerId: updatedBid.providerId,
+            });
+            void this.webhooks.dispatch(updatedBid.providerId, client_1.WebhookEventType.BID_ACCEPTED, {
+                projectId: updatedBid.projectId,
+                bidId: updatedBid.id,
+                providerId: updatedBid.providerId,
+            });
+        }
         return updatedBid;
+    }
+    async acceptBidAsAdmin(bidId) {
+        const bid = await this.prisma.bid.findUnique({
+            where: { id: bidId },
+            select: { id: true, status: true, projectId: true },
+        });
+        if (!bid)
+            throw new common_1.NotFoundException('Bid not found');
+        if (bid.status !== client_1.BidStatus.PENDING) {
+            throw new common_1.BadRequestException('Only pending bids can be accepted');
+        }
+        return this.updateStatus({
+            requesterId: '',
+            role: client_1.UserRole.ADMIN,
+            bidId,
+            status: 'ACCEPTED',
+            skipOwnershipCheck: true,
+        });
     }
 };
 exports.BidsService = BidsService;
@@ -202,6 +252,8 @@ exports.BidsService = BidsService = __decorate([
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notifications_service_1.NotificationsService,
         transactional_email_service_1.TransactionalEmailService,
-        domain_events_service_1.DomainEventsService])
+        domain_events_service_1.DomainEventsService,
+        hourly_service_1.HourlyService,
+        webhook_dispatcher_service_1.WebhookDispatcherService])
 ], BidsService);
 //# sourceMappingURL=bids.service.js.map

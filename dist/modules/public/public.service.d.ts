@@ -12,9 +12,9 @@ export declare class PublicService {
         sort?: 'newest' | 'budget_asc' | 'budget_desc';
     }): Promise<{
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         inScope: string[];
         outOfScope: string[];
         testingWindow: string;
@@ -32,9 +32,9 @@ export declare class PublicService {
     }[]>;
     getPublicProject(id: string): Promise<{
         id: string;
-        createdAt: Date;
-        title: string;
         description: string;
+        title: string;
+        createdAt: Date;
         inScope: string[];
         outOfScope: string[];
         testingWindow: string;
@@ -85,8 +85,8 @@ export declare class PublicService {
             bio: string;
             availabilityStatus: string;
         } | null;
-        id: string;
         firstName: string | null;
+        id: string;
         lastName: string | null;
     }[]>;
 }
