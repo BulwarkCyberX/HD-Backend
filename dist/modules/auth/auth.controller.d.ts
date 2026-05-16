@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { type RequestUser } from '../../auth/current-user.decorator';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -34,7 +35,7 @@ export declare class AuthController {
     checkEmail(email: string): Promise<{
         available: boolean;
     }>;
-    login(dto: LoginDto): Promise<{
+    login(dto: LoginDto, req: Request, res: Response): Promise<{
         user: {
             id: string;
             email: string;
@@ -43,11 +44,51 @@ export declare class AuthController {
             createdAt: Date;
         };
         accessToken: string;
+        refreshToken: string;
     }>;
+    refresh(req: Request, res: Response, body?: {
+        refreshToken?: string;
+    }): Promise<{
+        user: {
+            id: string;
+            email: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            entityId: string | null;
+            createdAt: Date;
+        };
+        accessToken: string;
+    } | {
+        message: string;
+    }>;
+    logout(req: Request, res: Response, body?: {
+        refreshToken?: string;
+    }): Promise<{
+        ok: boolean;
+    }>;
+    sessions(user: RequestUser): Promise<{
+        id: string;
+        userAgent: string | null;
+        ipAddress: string | null;
+        expiresAt: Date;
+        createdAt: Date;
+        lastUsedAt: Date;
+    }[]>;
+    revokeSession(user: RequestUser, id: string): Promise<{
+        ok: boolean;
+    }>;
+    revokeOthers(user: RequestUser, req: Request, body?: {
+        refreshToken?: string;
+    }): Promise<{
+        ok: boolean;
+    }> | {
+        ok: boolean;
+    };
+    private applyAuthCookies;
+    private cookieOpts;
     requestLoginCode(dto: RequestLoginCodeDto): Promise<{
         ok: boolean;
     }>;
-    verifyLoginCode(dto: VerifyLoginCodeDto): Promise<{
+    verifyLoginCode(dto: VerifyLoginCodeDto, req: Request, res: Response): Promise<{
         user: {
             id: string;
             email: string;
@@ -56,6 +97,7 @@ export declare class AuthController {
             createdAt: Date;
         };
         accessToken: string;
+        refreshToken: string;
     }>;
     oauthGoogle(next: string): {
         next: string;

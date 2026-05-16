@@ -3,6 +3,15 @@ import { PrismaService } from '../../prisma/prisma.service';
 export declare class SearchService {
     private readonly prisma;
     constructor(prisma: PrismaService);
+    searchPublicProjects(input: {
+        q: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        title: string;
+        budgetAmount: number;
+        status: import(".prisma/client").$Enums.ProjectStatus;
+    }[]>;
     searchProjects(input: {
         q: string;
         requesterId: string;

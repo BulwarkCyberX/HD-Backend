@@ -1,10 +1,12 @@
 import { Prisma, UserRole, type PaymentCurrency } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { WalletService } from '../wallets/wallet.service';
+import { KycService } from '../kyc/kyc.service';
 export declare class WithdrawalsService {
     private readonly prisma;
     private readonly wallets;
-    constructor(prisma: PrismaService, wallets: WalletService);
+    private readonly kyc;
+    constructor(prisma: PrismaService, wallets: WalletService, kyc: KycService);
     private readonly select;
     create(input: {
         userId: string;

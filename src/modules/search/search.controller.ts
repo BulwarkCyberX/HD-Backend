@@ -23,11 +23,6 @@ export class SearchController {
     return this.search.searchProviders({ q: q ?? '' });
   }
 
-  @Get('trending/projects')
-  trendingProjects() {
-    return this.search.trendingProjects();
-  }
-
   @Get('saved/me')
   savedMine(@CurrentUser() user: RequestUser) {
     return this.search.listSavedSearches(user.userId);

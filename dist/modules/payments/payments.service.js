@@ -34,6 +34,11 @@ let PaymentsService = class PaymentsService {
         };
     }
     async deposit(input) {
+        const allowLedgerOnly = input.allowLedgerOnly ??
+            (process.env.ALLOW_LEDGER_ONLY_DEPOSIT === 'true' || process.env.NODE_ENV !== 'production');
+        if (!allowLedgerOnly) {
+            throw new common_1.BadRequestException('Direct ledger deposit is disabled. Use POST /payments/checkout/create with a payment provider.');
+        }
         if (input.role !== client_1.UserRole.CLIENT) {
             throw new common_1.ForbiddenException('Only clients can deposit payment');
         }
@@ -80,6 +85,16 @@ let PaymentsService = class PaymentsService {
                 where: { id: created.id },
                 select: this.paymentSelect,
             });
+        });
+    }
+    async depositFromPsp(input) {
+        return this.deposit({
+            requesterId: input.requesterId,
+            role: client_1.UserRole.CLIENT,
+            projectId: input.projectId,
+            amount: input.amount,
+            currency: input.currency,
+            allowLedgerOnly: true,
         });
     }
     async release(input) {

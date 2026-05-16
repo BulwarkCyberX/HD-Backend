@@ -14,10 +14,12 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const wallet_service_1 = require("../wallets/wallet.service");
+const kyc_service_1 = require("../kyc/kyc.service");
 let WithdrawalsService = class WithdrawalsService {
-    constructor(prisma, wallets) {
+    constructor(prisma, wallets, kyc) {
         this.prisma = prisma;
         this.wallets = wallets;
+        this.kyc = kyc;
         this.select = {
             id: true,
             userId: true,
@@ -34,6 +36,7 @@ let WithdrawalsService = class WithdrawalsService {
         if (input.role === client_1.UserRole.ADMIN) {
             throw new common_1.ForbiddenException('Admins use separate payout tooling');
         }
+        await this.kyc.assertWithdrawalAllowed(input.userId);
         const amt = new client_1.Prisma.Decimal(String(input.amount));
         const wallet = await this.wallets.ensureUserWallet(input.userId, input.currency);
         if (wallet.availableBalance.lt(amt)) {
@@ -123,6 +126,7 @@ exports.WithdrawalsService = WithdrawalsService;
 exports.WithdrawalsService = WithdrawalsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        wallet_service_1.WalletService])
+        wallet_service_1.WalletService,
+        kyc_service_1.KycService])
 ], WithdrawalsService);
 //# sourceMappingURL=withdrawals.service.js.map

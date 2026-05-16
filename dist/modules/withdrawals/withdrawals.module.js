@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const withdrawals_controller_1 = require("./withdrawals.controller");
 const withdrawals_service_1 = require("./withdrawals.service");
 const wallets_module_1 = require("../wallets/wallets.module");
+const kyc_module_1 = require("../kyc/kyc.module");
 let WithdrawalsModule = class WithdrawalsModule {
 };
 exports.WithdrawalsModule = WithdrawalsModule;
 exports.WithdrawalsModule = WithdrawalsModule = __decorate([
     (0, common_1.Module)({
-        imports: [wallets_module_1.WalletsModule],
+        imports: [wallets_module_1.WalletsModule, kyc_module_1.KycModule],
         controllers: [withdrawals_controller_1.WithdrawalsController],
         providers: [withdrawals_service_1.WithdrawalsService],
         exports: [withdrawals_service_1.WithdrawalsService],

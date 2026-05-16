@@ -21,7 +21,7 @@ export declare class OrganizationsController {
     }[]>;
     addMember(user: RequestUser, id: string, dto: AddMemberDto): Promise<{
         id: string;
-        role: import(".prisma/client").$Enums.OrganizationMemberRole;
         userId: string;
+        role: import(".prisma/client").$Enums.OrganizationMemberRole;
     }>;
 }

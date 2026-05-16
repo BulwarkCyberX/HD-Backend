@@ -7,16 +7,16 @@ export declare class NotificationsController {
         message: string;
         id: string;
         createdAt: Date;
-        type: import(".prisma/client").$Enums.NotificationType;
         userId: string;
+        type: import(".prisma/client").$Enums.NotificationType;
         read: boolean;
     }[]>;
     markRead(user: RequestUser, id: string): Promise<{
         message: string;
         id: string;
         createdAt: Date;
-        type: import(".prisma/client").$Enums.NotificationType;
         userId: string;
+        type: import(".prisma/client").$Enums.NotificationType;
         read: boolean;
     }>;
 }

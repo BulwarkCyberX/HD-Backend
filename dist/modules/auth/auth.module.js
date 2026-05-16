@@ -13,6 +13,7 @@ const passport_1 = require("@nestjs/passport");
 const config_1 = require("@nestjs/config");
 const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
+const session_service_1 = require("./session.service");
 const jwt_strategy_1 = require("./jwt.strategy");
 const roles_guard_1 = require("../../auth/roles.guard");
 const oauth_strategies_providers_1 = require("./oauth-strategies.providers");
@@ -37,8 +38,8 @@ exports.AuthModule = AuthModule = __decorate([
             }),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, roles_guard_1.RolesGuard, ...oauth_strategies_providers_1.oauthStrategyProviders],
-        exports: [jwt_1.JwtModule, roles_guard_1.RolesGuard],
+        providers: [auth_service_1.AuthService, session_service_1.SessionService, jwt_strategy_1.JwtStrategy, roles_guard_1.RolesGuard, ...oauth_strategies_providers_1.oauthStrategyProviders],
+        exports: [jwt_1.JwtModule, roles_guard_1.RolesGuard, session_service_1.SessionService],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

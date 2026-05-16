@@ -32,9 +32,6 @@ let SearchController = class SearchController {
     providers(q) {
         return this.search.searchProviders({ q: q ?? '' });
     }
-    trendingProjects() {
-        return this.search.trendingProjects();
-    }
     savedMine(user) {
         return this.search.listSavedSearches(user.userId);
     }
@@ -58,12 +55,6 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], SearchController.prototype, "providers", null);
-__decorate([
-    (0, common_1.Get)('trending/projects'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], SearchController.prototype, "trendingProjects", null);
 __decorate([
     (0, common_1.Get)('saved/me'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),

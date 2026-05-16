@@ -18,6 +18,7 @@ const crypto_1 = require("crypto");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 const transactional_email_service_1 = require("../email/transactional-email.service");
+const session_service_1 = require("./session.service");
 const EMAIL_VERIFY_HOURS = 24;
 const PASSWORD_RESET_HOURS = 1;
 const RESEND_VERIFICATION_COOLDOWN_MS = 60_000;
@@ -33,11 +34,12 @@ function hashOpaqueToken(raw) {
     return (0, crypto_1.createHash)('sha256').update(raw, 'utf8').digest('hex');
 }
 let AuthService = class AuthService {
-    constructor(prisma, jwt, config, transactional) {
+    constructor(prisma, jwt, config, transactional, sessions) {
         this.prisma = prisma;
         this.jwt = jwt;
         this.config = config;
         this.transactional = transactional;
+        this.sessions = sessions;
     }
     async register(input) {
         const email = normalizeEmail(input.email);
@@ -289,10 +291,7 @@ let AuthService = class AuthService {
                 code: 'EMAIL_NOT_VERIFIED',
             });
         }
-        return {
-            user: { id: user.id, email: user.email, role: user.role, entityId: user.entityId, createdAt: user.createdAt },
-            accessToken: await this.signAccessToken({ sub: user.id, role: user.role }),
-        };
+        return this.issueAuthResponse(user);
     }
     async requestLoginCode(input) {
         const email = normalizeEmail(input.email);
@@ -355,10 +354,7 @@ let AuthService = class AuthService {
                 data: { emailVerifiedAt: now },
             });
         }
-        return {
-            user: { id: user.id, email: user.email, role: user.role, entityId: user.entityId, createdAt: user.createdAt },
-            accessToken: await this.signAccessToken({ sub: user.id, role: user.role }),
-        };
+        return this.issueAuthResponse(user);
     }
     async loginWithOAuth(input) {
         const email = normalizeEmail(input.email);
@@ -388,9 +384,54 @@ let AuthService = class AuthService {
                 },
             });
         }
+        return this.issueAuthResponse(user);
+    }
+    async refreshSession(refreshToken) {
+        const refreshed = await this.sessions.refreshAccessToken(refreshToken);
+        const user = await this.prisma.user.findUniqueOrThrow({
+            where: { id: refreshed.user.id },
+            select: { id: true, email: true, role: true, entityId: true, createdAt: true },
+        });
         return {
-            user: { id: user.id, email: user.email, role: user.role, entityId: user.entityId, createdAt: user.createdAt },
-            accessToken: await this.signAccessToken({ sub: user.id, role: user.role }),
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                entityId: user.entityId,
+                createdAt: user.createdAt,
+            },
+            accessToken: refreshed.accessToken,
+        };
+    }
+    async logout(refreshToken) {
+        if (refreshToken)
+            await this.sessions.revokeByRefreshToken(refreshToken);
+        return { ok: true };
+    }
+    listSessions(userId) {
+        return this.sessions.listSessions(userId);
+    }
+    revokeSession(userId, sessionId) {
+        return this.sessions.revokeSession(userId, sessionId);
+    }
+    revokeOtherSessions(userId, refreshToken) {
+        return this.sessions.revokeOtherSessions(userId, refreshToken);
+    }
+    async issueAuthResponse(user) {
+        const tokens = await this.sessions.issueTokenPair({
+            userId: user.id,
+            role: user.role,
+        });
+        return {
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                entityId: user.entityId,
+                createdAt: user.createdAt,
+            },
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
         };
     }
     async signAccessToken(payload) {
@@ -403,6 +444,7 @@ exports.AuthService = AuthService = __decorate([
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,
         config_1.ConfigService,
-        transactional_email_service_1.TransactionalEmailService])
+        transactional_email_service_1.TransactionalEmailService,
+        session_service_1.SessionService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

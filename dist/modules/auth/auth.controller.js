@@ -15,7 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
+const jwt_auth_guard_1 = require("../../auth/jwt-auth.guard");
+const current_user_decorator_1 = require("../../auth/current-user.decorator");
 const auth_service_1 = require("./auth.service");
+const auth_cookies_1 = require("./auth-cookies");
 const register_dto_1 = require("./dto/register.dto");
 const login_dto_1 = require("./dto/login.dto");
 const request_login_code_dto_1 = require("./dto/request-login-code.dto");
@@ -50,14 +53,54 @@ let AuthController = class AuthController {
     checkEmail(email) {
         return this.auth.checkEmailAvailability(email);
     }
-    login(dto) {
-        return this.auth.login(dto);
+    async login(dto, req, res) {
+        const session = await this.auth.login(dto);
+        this.applyAuthCookies(req, res, session);
+        return session;
+    }
+    async refresh(req, res, body) {
+        const refreshToken = (0, auth_cookies_1.readRefreshCookie)(req) ?? body?.refreshToken;
+        if (!refreshToken) {
+            return { message: 'Missing refresh token' };
+        }
+        const session = await this.auth.refreshSession(refreshToken);
+        (0, auth_cookies_1.setAuthCookies)(res, { accessToken: session.accessToken, refreshToken }, this.cookieOpts(req));
+        return session;
+    }
+    async logout(req, res, body) {
+        const refreshToken = (0, auth_cookies_1.readRefreshCookie)(req) ?? body?.refreshToken;
+        await this.auth.logout(refreshToken);
+        (0, auth_cookies_1.clearAuthCookies)(res);
+        return { ok: true };
+    }
+    sessions(user) {
+        return this.auth.listSessions(user.userId);
+    }
+    revokeSession(user, id) {
+        return this.auth.revokeSession(user.userId, id);
+    }
+    revokeOthers(user, req, body) {
+        const refreshToken = (0, auth_cookies_1.readRefreshCookie)(req) ?? body?.refreshToken;
+        if (!refreshToken)
+            return { ok: false };
+        return this.auth.revokeOtherSessions(user.userId, refreshToken);
+    }
+    applyAuthCookies(req, res, session) {
+        if (session.refreshToken) {
+            (0, auth_cookies_1.setAuthCookies)(res, { accessToken: session.accessToken, refreshToken: session.refreshToken }, this.cookieOpts(req));
+        }
+    }
+    cookieOpts(req) {
+        const secure = process.env.NODE_ENV === 'production' || req.secure;
+        return { secure, sameSite: 'lax' };
     }
     requestLoginCode(dto) {
         return this.auth.requestLoginCode(dto);
     }
-    verifyLoginCode(dto) {
-        return this.auth.verifyLoginCode(dto);
+    async verifyLoginCode(dto, req, res) {
+        const session = await this.auth.verifyLoginCode(dto);
+        this.applyAuthCookies(req, res, session);
+        return session;
     }
     oauthGoogle(next) {
         return { next };
@@ -165,10 +208,61 @@ __decorate([
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [login_dto_1.LoginDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [login_dto_1.LoginDto, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('refresh'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "refresh", null);
+__decorate([
+    (0, common_1.Post)('logout'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "logout", null);
+__decorate([
+    (0, common_1.Get)('sessions'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "sessions", null);
+__decorate([
+    (0, common_1.Post)('sessions/:id/revoke'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "revokeSession", null);
+__decorate([
+    (0, common_1.Post)('sessions/revoke-others'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "revokeOthers", null);
 __decorate([
     (0, common_1.Post)('login/code/request'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
@@ -181,9 +275,11 @@ __decorate([
     (0, common_1.Post)('login/code/verify'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [verify_login_code_dto_1.VerifyLoginCodeDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [verify_login_code_dto_1.VerifyLoginCodeDto, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyLoginCode", null);
 __decorate([
     (0, common_1.Get)('oauth/google'),

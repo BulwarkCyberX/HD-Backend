@@ -39,6 +39,9 @@ const health_module_1 = require("./modules/health/health.module");
 const analytics_module_1 = require("./modules/analytics/analytics.module");
 const organizations_module_1 = require("./modules/organizations/organizations.module");
 const trust_module_1 = require("./modules/trust/trust.module");
+const psp_module_1 = require("./modules/psp/psp.module");
+const kyc_module_1 = require("./modules/kyc/kyc.module");
+const public_module_1 = require("./modules/public/public.module");
 const throttler_1 = require("@nestjs/throttler");
 const core_1 = require("@nestjs/core");
 let AppModule = class AppModule {
@@ -77,6 +80,9 @@ exports.AppModule = AppModule = __decorate([
             analytics_module_1.AnalyticsModule,
             organizations_module_1.OrganizationsModule,
             trust_module_1.TrustModule,
+            psp_module_1.PspModule,
+            kyc_module_1.KycModule,
+            public_module_1.PublicModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService, { provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],

@@ -17,6 +17,30 @@ let SearchService = class SearchService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    async searchPublicProjects(input) {
+        const q = input.q.trim();
+        if (q.length < 2)
+            return this.trendingProjects();
+        return this.prisma.project.findMany({
+            where: {
+                visibility: 'PUBLIC',
+                OR: [
+                    { title: { contains: q, mode: 'insensitive' } },
+                    { description: { contains: q, mode: 'insensitive' } },
+                ],
+            },
+            take: 40,
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                title: true,
+                budgetAmount: true,
+                budgetType: true,
+                status: true,
+                createdAt: true,
+            },
+        });
+    }
     async searchProjects(input) {
         const q = input.q.trim();
         if (q.length < 2)

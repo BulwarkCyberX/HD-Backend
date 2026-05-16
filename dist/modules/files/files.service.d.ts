@@ -53,13 +53,13 @@ export declare class FilesService {
         requesterId: string;
         role: UserRole;
     }): Promise<{
+        messageId: string | null;
+        projectId: string | null;
         storageKey: string;
         originalName: string;
         mimeType: string;
-        projectId: string | null;
         workspaceReportId: string | null;
         bugReportId: string | null;
-        messageId: string | null;
         vdpSubmissionId: string | null;
     }>;
     openStream(storageKey: string): import("fs").ReadStream;

@@ -14,7 +14,7 @@ import {
   UserRole,
   type Prisma,
 } from '@prisma/client';
-import { createHash, randomBytes } from 'crypto';
+import { createHash } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
 import { PaymentAuditService } from './payment-audit.service';

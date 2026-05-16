@@ -55,13 +55,13 @@ export class KycService {
     bankAccountHolder: string;
   }) {
     const pending = await this.prisma.kycSubmission.findFirst({
-      where: { userId, status: KycStatus.PENDING },
+      where: { userId: input.userId, status: KycStatus.PENDING },
     });
     if (pending) {
       throw new BadRequestException('KYC submission already pending review');
     }
     const approved = await this.prisma.kycSubmission.findFirst({
-      where: { userId, status: KycStatus.APPROVED },
+      where: { userId: input.userId, status: KycStatus.APPROVED },
     });
     if (approved) {
       throw new BadRequestException('KYC already approved');

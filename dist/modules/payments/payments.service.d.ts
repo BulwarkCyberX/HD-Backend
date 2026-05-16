@@ -16,6 +16,22 @@ export declare class PaymentsService {
         projectId: string;
         amount: number;
         currency: PaymentCurrency;
+        allowLedgerOnly?: boolean;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.PaymentStatus;
+        projectId: string;
+        payerId: string;
+        payeeId: string;
+        amount: number;
+        currency: import(".prisma/client").$Enums.PaymentCurrency;
+    }>;
+    depositFromPsp(input: {
+        requesterId: string;
+        projectId: string;
+        amount: number;
+        currency: PaymentCurrency;
     }): Promise<{
         id: string;
         createdAt: Date;

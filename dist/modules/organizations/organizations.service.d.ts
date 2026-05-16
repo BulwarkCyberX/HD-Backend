@@ -29,8 +29,8 @@ export declare class OrganizationsService {
         role: OrganizationMemberRole;
     }): Promise<{
         id: string;
-        role: import(".prisma/client").$Enums.OrganizationMemberRole;
         userId: string;
+        role: import(".prisma/client").$Enums.OrganizationMemberRole;
     }>;
     private assertAdminOrOwner;
 }

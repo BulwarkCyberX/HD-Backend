@@ -20,6 +20,7 @@ exports.PaymentsModule = PaymentsModule = __decorate([
         imports: [notifications_module_1.NotificationsModule, wallets_module_1.WalletsModule],
         controllers: [payments_controller_1.PaymentsController],
         providers: [payments_service_1.PaymentsService],
+        exports: [payments_service_1.PaymentsService],
     })
 ], PaymentsModule);
 //# sourceMappingURL=payments.module.js.map

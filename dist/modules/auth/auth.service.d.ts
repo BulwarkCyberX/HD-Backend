@@ -4,12 +4,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { UserRole } from '@prisma/client';
 import type { OAuthProvider } from './oauth.types';
 import { TransactionalEmailService } from '../email/transactional-email.service';
+import { SessionService } from './session.service';
 export declare class AuthService {
     private readonly prisma;
     private readonly jwt;
     private readonly config;
     private readonly transactional;
-    constructor(prisma: PrismaService, jwt: JwtService, config: ConfigService, transactional: TransactionalEmailService);
+    private readonly sessions;
+    constructor(prisma: PrismaService, jwt: JwtService, config: ConfigService, transactional: TransactionalEmailService, sessions: SessionService);
     register(input: {
         email: string;
         password: string;
@@ -61,6 +63,7 @@ export declare class AuthService {
             createdAt: Date;
         };
         accessToken: string;
+        refreshToken: string;
     }>;
     requestLoginCode(input: {
         email: string;
@@ -79,6 +82,7 @@ export declare class AuthService {
             createdAt: Date;
         };
         accessToken: string;
+        refreshToken: string;
     }>;
     loginWithOAuth(input: {
         provider: OAuthProvider;
@@ -94,6 +98,35 @@ export declare class AuthService {
             createdAt: Date;
         };
         accessToken: string;
+        refreshToken: string;
     }>;
+    refreshSession(refreshToken: string): Promise<{
+        user: {
+            id: string;
+            email: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            entityId: string | null;
+            createdAt: Date;
+        };
+        accessToken: string;
+    }>;
+    logout(refreshToken?: string): Promise<{
+        ok: true;
+    }>;
+    listSessions(userId: string): Promise<{
+        id: string;
+        userAgent: string | null;
+        ipAddress: string | null;
+        expiresAt: Date;
+        createdAt: Date;
+        lastUsedAt: Date;
+    }[]>;
+    revokeSession(userId: string, sessionId: string): Promise<{
+        ok: boolean;
+    }>;
+    revokeOtherSessions(userId: string, refreshToken: string): Promise<{
+        ok: boolean;
+    }>;
+    private issueAuthResponse;
     private signAccessToken;
 }

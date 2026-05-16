@@ -24,13 +24,6 @@ export declare class SearchController {
         email: string;
         id: string;
     }[]>;
-    trendingProjects(): Promise<{
-        id: string;
-        createdAt: Date;
-        title: string;
-        budgetAmount: number;
-        status: import(".prisma/client").$Enums.ProjectStatus;
-    }[]>;
     savedMine(user: RequestUser): Promise<{
         name: string;
         id: string;

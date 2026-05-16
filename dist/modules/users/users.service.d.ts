@@ -15,6 +15,7 @@ export declare class UsersService {
         providerProfile: {
             id: string;
             createdAt: Date;
+            userId: string;
             skills: string[];
             certifications: string[];
             rating: number;
@@ -23,19 +24,21 @@ export declare class UsersService {
             validReportCount: number;
             reputationScore: number;
             bidCredits: number;
-            userId: string;
+            bio: string;
+            portfolio: import("@prisma/client/runtime/library").JsonValue | null;
+            availabilityStatus: string;
         } | null;
         clientProfile: {
             id: string;
             createdAt: Date;
-            companySize: string | null;
             userId: string;
+            companySize: string | null;
         } | null;
         email: string;
         id: string;
+        createdAt: Date;
         role: import(".prisma/client").$Enums.UserRole;
         entityId: string | null;
-        createdAt: Date;
     }>;
     getById(requester: {
         userId: string;
@@ -51,6 +54,7 @@ export declare class UsersService {
         providerProfile: {
             id: string;
             createdAt: Date;
+            userId: string;
             skills: string[];
             certifications: string[];
             rating: number;
@@ -59,19 +63,21 @@ export declare class UsersService {
             validReportCount: number;
             reputationScore: number;
             bidCredits: number;
-            userId: string;
+            bio: string;
+            portfolio: import("@prisma/client/runtime/library").JsonValue | null;
+            availabilityStatus: string;
         } | null;
         clientProfile: {
             id: string;
             createdAt: Date;
-            companySize: string | null;
             userId: string;
+            companySize: string | null;
         } | null;
         email: string;
         id: string;
+        createdAt: Date;
         role: import(".prisma/client").$Enums.UserRole;
         entityId: string | null;
-        createdAt: Date;
     }>;
     getProviderProfile(id: string): Promise<{
         providerProfile: {

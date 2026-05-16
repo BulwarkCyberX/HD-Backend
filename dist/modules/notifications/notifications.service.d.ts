@@ -16,8 +16,8 @@ export declare class NotificationsService {
         message: string;
         id: string;
         createdAt: Date;
-        type: import(".prisma/client").$Enums.NotificationType;
         userId: string;
+        type: import(".prisma/client").$Enums.NotificationType;
         read: boolean;
     }>;
     private trySendNotificationEmail;
@@ -25,8 +25,8 @@ export declare class NotificationsService {
         message: string;
         id: string;
         createdAt: Date;
-        type: import(".prisma/client").$Enums.NotificationType;
         userId: string;
+        type: import(".prisma/client").$Enums.NotificationType;
         read: boolean;
     }[]>;
     markRead(input: {
@@ -36,8 +36,8 @@ export declare class NotificationsService {
         message: string;
         id: string;
         createdAt: Date;
-        type: import(".prisma/client").$Enums.NotificationType;
         userId: string;
+        type: import(".prisma/client").$Enums.NotificationType;
         read: boolean;
     }>;
 }
