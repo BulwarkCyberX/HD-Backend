@@ -44,6 +44,7 @@ let AdminController = class AdminController {
                 { id: 'emails', label: 'Email templates', href: '/dashboard/admin/emails' },
                 { id: 'analytics', label: 'Analytics', href: '/dashboard/admin/analytics' },
                 { id: 'settings', label: 'Platform settings', href: '/dashboard/admin/settings' },
+                { id: 'fraud', label: 'Fraud flags', href: '/dashboard/admin/fraud' },
             ],
         };
     }
@@ -52,6 +53,9 @@ let AdminController = class AdminController {
     }
     listFraudFlags() {
         return this.fraud.listFlaggedUsers();
+    }
+    clearFraudFlag(user, userId) {
+        return this.fraud.clearFlag(userId, user.userId);
     }
     listEmailTemplates() {
         return this.emailTemplates.list();
@@ -111,6 +115,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "listFraudFlags", null);
+__decorate([
+    (0, common_1.Patch)('fraud/flags/:userId/clear'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "clearFraudFlag", null);
 __decorate([
     (0, common_1.Get)('email-templates'),
     __metadata("design:type", Function),

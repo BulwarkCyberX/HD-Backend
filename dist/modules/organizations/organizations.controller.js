@@ -21,9 +21,12 @@ const organizations_service_1 = require("./organizations.service");
 const create_organization_dto_1 = require("./dto/create-organization.dto");
 const add_member_dto_1 = require("./dto/add-member.dto");
 const link_project_dto_1 = require("./dto/link-project.dto");
+const enterprise_sso_service_1 = require("../enterprise-sso/enterprise-sso.service");
+const upsert_org_sso_dto_1 = require("../enterprise-sso/dto/upsert-org-sso.dto");
 let OrganizationsController = class OrganizationsController {
-    constructor(orgs) {
+    constructor(orgs, sso) {
         this.orgs = orgs;
+        this.sso = sso;
     }
     create(user, dto) {
         return this.orgs.create({
@@ -63,6 +66,15 @@ let OrganizationsController = class OrganizationsController {
             projectId,
             requesterId: user.userId,
         });
+    }
+    getSso(user, id) {
+        return this.sso.getConfigForMember(id, user.userId);
+    }
+    upsertSso(user, id, dto) {
+        return this.sso.upsertConfig(id, user.userId, dto);
+    }
+    deleteSso(user, id) {
+        return this.sso.deleteConfig(id, user.userId);
     }
 };
 exports.OrganizationsController = OrganizationsController;
@@ -125,11 +137,37 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", void 0)
 ], OrganizationsController.prototype, "unlinkProject", null);
+__decorate([
+    (0, common_1.Get)(':id/sso'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], OrganizationsController.prototype, "getSso", null);
+__decorate([
+    (0, common_1.Put)(':id/sso'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, upsert_org_sso_dto_1.UpsertOrgSsoDto]),
+    __metadata("design:returntype", void 0)
+], OrganizationsController.prototype, "upsertSso", null);
+__decorate([
+    (0, common_1.Delete)(':id/sso'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], OrganizationsController.prototype, "deleteSso", null);
 exports.OrganizationsController = OrganizationsController = __decorate([
     (0, swagger_1.ApiTags)('organizations'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('organizations'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __metadata("design:paramtypes", [organizations_service_1.OrganizationsService])
+    __metadata("design:paramtypes", [organizations_service_1.OrganizationsService,
+        enterprise_sso_service_1.EnterpriseSsoService])
 ], OrganizationsController);
 //# sourceMappingURL=organizations.controller.js.map

@@ -47,6 +47,21 @@ let FraudService = FraudService_1 = class FraudService {
         }
         return count;
     }
+    async clearFlag(userId, actorId) {
+        const existing = await this.prisma.fraudFlag.findUnique({ where: { userId } });
+        if (!existing)
+            throw new common_1.NotFoundException('Fraud flag not found');
+        await this.prisma.fraudFlag.update({
+            where: { userId },
+            data: {
+                score: 0,
+                reasons: {
+                    entries: [{ reason: 'CLEARED_BY_ADMIN', actorId, at: new Date().toISOString() }],
+                },
+            },
+        });
+        return { ok: true };
+    }
     async listFlaggedUsers(limit = 50) {
         return this.prisma.fraudFlag.findMany({
             where: { score: { gte: 10 } },

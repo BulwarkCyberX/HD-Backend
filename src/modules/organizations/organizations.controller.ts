@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { CurrentUser, type RequestUser } from '../../auth/current-user.decorator';
@@ -6,13 +6,18 @@ import { OrganizationsService } from './organizations.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { LinkProjectDto } from './dto/link-project.dto';
+import { EnterpriseSsoService } from '../enterprise-sso/enterprise-sso.service';
+import { UpsertOrgSsoDto } from '../enterprise-sso/dto/upsert-org-sso.dto';
 
 @ApiTags('organizations')
 @ApiBearerAuth()
 @Controller('organizations')
 @UseGuards(JwtAuthGuard)
 export class OrganizationsController {
-  constructor(private readonly orgs: OrganizationsService) {}
+  constructor(
+    private readonly orgs: OrganizationsService,
+    private readonly sso: EnterpriseSsoService,
+  ) {}
 
   @Post()
   create(@CurrentUser() user: RequestUser, @Body() dto: CreateOrganizationDto) {
@@ -70,5 +75,20 @@ export class OrganizationsController {
       projectId,
       requesterId: user.userId,
     });
+  }
+
+  @Get(':id/sso')
+  getSso(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.sso.getConfigForMember(id, user.userId);
+  }
+
+  @Put(':id/sso')
+  upsertSso(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() dto: UpsertOrgSsoDto) {
+    return this.sso.upsertConfig(id, user.userId, dto);
+  }
+
+  @Delete(':id/sso')
+  deleteSso(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.sso.deleteConfig(id, user.userId);
   }
 }

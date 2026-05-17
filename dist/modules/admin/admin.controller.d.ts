@@ -49,6 +49,9 @@ export declare class AdminController {
         score: number;
         reasons: import("@prisma/client/runtime/library").JsonValue;
     }[]>;
+    clearFraudFlag(user: RequestUser, userId: string): Promise<{
+        ok: boolean;
+    }>;
     listEmailTemplates(): Promise<{
         name: string;
         subject: string;

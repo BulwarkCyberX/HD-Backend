@@ -3,9 +3,12 @@ import { OrganizationsService } from './organizations.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { LinkProjectDto } from './dto/link-project.dto';
+import { EnterpriseSsoService } from '../enterprise-sso/enterprise-sso.service';
+import { UpsertOrgSsoDto } from '../enterprise-sso/dto/upsert-org-sso.dto';
 export declare class OrganizationsController {
     private readonly orgs;
-    constructor(orgs: OrganizationsService);
+    private readonly sso;
+    constructor(orgs: OrganizationsService, sso: EnterpriseSsoService);
     create(user: RequestUser, dto: CreateOrganizationDto): Promise<{
         name: string;
         id: string;
@@ -67,5 +70,26 @@ export declare class OrganizationsController {
     }>;
     unlinkProject(user: RequestUser, id: string, projectId: string): Promise<{
         ok: true;
+    }>;
+    getSso(user: RequestUser, id: string): Promise<{
+        id: string;
+        updatedAt: Date;
+        enabled: boolean;
+        clientId: string;
+        protocol: import(".prisma/client").$Enums.EnterpriseSsoProtocol;
+        issuerUrl: string;
+        allowedEmailDomains: string[];
+    } | null>;
+    upsertSso(user: RequestUser, id: string, dto: UpsertOrgSsoDto): Promise<{
+        id: string;
+        updatedAt: Date;
+        enabled: boolean;
+        clientId: string;
+        protocol: import(".prisma/client").$Enums.EnterpriseSsoProtocol;
+        issuerUrl: string;
+        allowedEmailDomains: string[];
+    }>;
+    deleteSso(user: RequestUser, id: string): Promise<{
+        ok: boolean;
     }>;
 }

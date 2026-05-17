@@ -6,6 +6,9 @@ export declare class FraudService {
     constructor(prisma: PrismaService);
     checkBidVelocity(providerId: string): Promise<number>;
     checkReportVelocity(providerId: string): Promise<number>;
+    clearFlag(userId: string, actorId: string): Promise<{
+        ok: boolean;
+    }>;
     listFlaggedUsers(limit?: number): Promise<{
         user: {
             email: string;

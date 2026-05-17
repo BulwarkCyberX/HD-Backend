@@ -196,6 +196,11 @@ enum OrganizationMemberRole {
   MEMBER
 }
 
+enum EnterpriseSsoProtocol {
+  OIDC
+  SAML
+}
+
 enum FileUploadStatus {
   PENDING_UPLOAD
   ACTIVE
@@ -936,6 +941,21 @@ model Organization {
 
   members OrganizationMember[]
   projects OrganizationProject[]
+  ssoConfig OrganizationSsoConfig?
+}
+
+model OrganizationSsoConfig {
+  id                   String                @id @default(cuid())
+  organizationId       String                @unique
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  protocol             EnterpriseSsoProtocol @default(OIDC)
+  enabled              Boolean               @default(false)
+  issuerUrl            String
+  clientId             String
+  clientSecret         String
+  allowedEmailDomains  String[]              @default([])
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 }
 
 model OrganizationMember {

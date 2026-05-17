@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -38,6 +38,21 @@ export class FraudService {
       });
     }
     return count;
+  }
+
+  async clearFlag(userId: string, actorId: string) {
+    const existing = await this.prisma.fraudFlag.findUnique({ where: { userId } });
+    if (!existing) throw new NotFoundException('Fraud flag not found');
+    await this.prisma.fraudFlag.update({
+      where: { userId },
+      data: {
+        score: 0,
+        reasons: {
+          entries: [{ reason: 'CLEARED_BY_ADMIN', actorId, at: new Date().toISOString() }],
+        } as Prisma.InputJsonValue,
+      },
+    });
+    return { ok: true };
   }
 
   async listFlaggedUsers(limit = 50) {

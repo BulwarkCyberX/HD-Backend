@@ -35,6 +35,7 @@ export class AdminController {
         { id: 'emails', label: 'Email templates', href: '/dashboard/admin/emails' },
         { id: 'analytics', label: 'Analytics', href: '/dashboard/admin/analytics' },
         { id: 'settings', label: 'Platform settings', href: '/dashboard/admin/settings' },
+        { id: 'fraud', label: 'Fraud flags', href: '/dashboard/admin/fraud' },
       ],
     };
   }
@@ -47,6 +48,11 @@ export class AdminController {
   @Get('fraud/flags')
   listFraudFlags() {
     return this.fraud.listFlaggedUsers();
+  }
+
+  @Patch('fraud/flags/:userId/clear')
+  clearFraudFlag(@CurrentUser() user: RequestUser, @Param('userId') userId: string) {
+    return this.fraud.clearFlag(userId, user.userId);
   }
 
   @Get('email-templates')
