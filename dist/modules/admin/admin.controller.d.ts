@@ -4,6 +4,7 @@ import { EmailTemplateService } from '../email/email-template.service';
 import { AdminProjectsService } from './admin-projects.service';
 import { BidsService } from '../bids/bids.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { FraudService } from '../trust/fraud.service';
 import { UpdateEmailTemplateDto } from './dto/update-email-template.dto';
 import { AdminUpdateProjectDto } from './dto/admin-update-project.dto';
 export declare class AdminController {
@@ -11,7 +12,8 @@ export declare class AdminController {
     private readonly adminProjects;
     private readonly bids;
     private readonly analytics;
-    constructor(emailTemplates: EmailTemplateService, adminProjects: AdminProjectsService, bids: BidsService, analytics: AnalyticsService);
+    private readonly fraud;
+    constructor(emailTemplates: EmailTemplateService, adminProjects: AdminProjectsService, bids: BidsService, analytics: AnalyticsService, fraud: FraudService);
     overview(): {
         sections: {
             id: string;
@@ -36,6 +38,17 @@ export declare class AdminController {
             currency: import(".prisma/client").$Enums.PaymentCurrency;
         } | null;
     }>;
+    listFraudFlags(): Promise<{
+        user: {
+            email: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        };
+        id: string;
+        updatedAt: Date;
+        userId: string;
+        score: number;
+        reasons: import("@prisma/client/runtime/library").JsonValue;
+    }[]>;
     listEmailTemplates(): Promise<{
         name: string;
         subject: string;

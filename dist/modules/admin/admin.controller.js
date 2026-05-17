@@ -23,14 +23,16 @@ const email_template_service_1 = require("../email/email-template.service");
 const admin_projects_service_1 = require("./admin-projects.service");
 const bids_service_1 = require("../bids/bids.service");
 const analytics_service_1 = require("../analytics/analytics.service");
+const fraud_service_1 = require("../trust/fraud.service");
 const update_email_template_dto_1 = require("./dto/update-email-template.dto");
 const admin_update_project_dto_1 = require("./dto/admin-update-project.dto");
 let AdminController = class AdminController {
-    constructor(emailTemplates, adminProjects, bids, analytics) {
+    constructor(emailTemplates, adminProjects, bids, analytics, fraud) {
         this.emailTemplates = emailTemplates;
         this.adminProjects = adminProjects;
         this.bids = bids;
         this.analytics = analytics;
+        this.fraud = fraud;
     }
     overview() {
         return {
@@ -47,6 +49,9 @@ let AdminController = class AdminController {
     }
     analyticsSummary() {
         return this.analytics.adminSummary();
+    }
+    listFraudFlags() {
+        return this.fraud.listFlaggedUsers();
     }
     listEmailTemplates() {
         return this.emailTemplates.list();
@@ -100,6 +105,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "analyticsSummary", null);
+__decorate([
+    (0, common_1.Get)('fraud/flags'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "listFraudFlags", null);
 __decorate([
     (0, common_1.Get)('email-templates'),
     __metadata("design:type", Function),
@@ -182,6 +193,7 @@ exports.AdminController = AdminController = __decorate([
     __metadata("design:paramtypes", [email_template_service_1.EmailTemplateService,
         admin_projects_service_1.AdminProjectsService,
         bids_service_1.BidsService,
-        analytics_service_1.AnalyticsService])
+        analytics_service_1.AnalyticsService,
+        fraud_service_1.FraudService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

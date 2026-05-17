@@ -29,7 +29,7 @@ let IntegrationsController = class IntegrationsController {
         return this.integrations.listApiKeys(user.userId);
     }
     createApiKey(user, dto) {
-        return this.integrations.createApiKey(user.userId, dto.label);
+        return this.integrations.createApiKey(user.userId, dto.label, dto.scopes);
     }
     revokeApiKey(user, id) {
         return this.integrations.revokeApiKey(user.userId, id);
@@ -48,6 +48,12 @@ let IntegrationsController = class IntegrationsController {
     }
     listDeliveries(user, id) {
         return this.integrations.listDeliveries(user.userId, id);
+    }
+    testWebhook(user, id) {
+        return this.integrations.sendWebhookTest(user.userId, id);
+    }
+    retryDelivery(user, deliveryId) {
+        return this.integrations.retryDelivery(user.userId, deliveryId);
     }
 };
 exports.IntegrationsController = IntegrationsController;
@@ -114,6 +120,22 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], IntegrationsController.prototype, "listDeliveries", null);
+__decorate([
+    (0, common_1.Post)('webhooks/:id/test'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], IntegrationsController.prototype, "testWebhook", null);
+__decorate([
+    (0, common_1.Post)('webhooks/deliveries/:deliveryId/retry'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('deliveryId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], IntegrationsController.prototype, "retryDelivery", null);
 exports.IntegrationsController = IntegrationsController = __decorate([
     (0, swagger_1.ApiTags)('integrations'),
     (0, swagger_1.ApiBearerAuth)(),

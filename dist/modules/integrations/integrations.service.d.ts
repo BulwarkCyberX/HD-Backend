@@ -1,8 +1,12 @@
-import { WebhookEventType } from '@prisma/client';
+import { ReportSeverity, WebhookEventType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ReportsService } from '../reports/reports.service';
+import { WebhookDispatcherService } from './webhook-dispatcher.service';
 export declare class IntegrationsService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly webhooks;
+    private readonly reports;
+    constructor(prisma: PrismaService, webhooks: WebhookDispatcherService, reports: ReportsService);
     listApiKeys(userId: string): Promise<{
         id: string;
         createdAt: Date;
@@ -11,11 +15,11 @@ export declare class IntegrationsService {
         keyPrefix: string;
         scopes: string[];
     }[]>;
-    createApiKey(userId: string, label: string): Promise<{
+    createApiKey(userId: string, label: string, scopes?: string[]): Promise<{
         apiKey: string;
         keyPrefix: string;
         label: string;
-        scopes: string[];
+        scopes: ("read" | "write:reports")[];
     }>;
     revokeApiKey(userId: string, keyId: string): Promise<{
         ok: boolean;
@@ -112,6 +116,61 @@ export declare class IntegrationsService {
         currency: import(".prisma/client").$Enums.PaymentCurrency;
         releasedAt: Date | null;
     }[]>;
+    sendWebhookTest(userId: string, endpointId: string): Promise<{
+        ok: boolean;
+        message: string;
+    }>;
+    retryDelivery(userId: string, deliveryId: string): Promise<{
+        ok: boolean;
+        message: string;
+    }>;
+    getDeliveryForRetry(userId: string, deliveryId: string): Promise<{
+        id: string;
+        event: import(".prisma/client").$Enums.WebhookEventType;
+        payload: import("@prisma/client/runtime/library").JsonValue;
+        success: boolean;
+        endpointId: string;
+    }>;
+    createReportForApiUser(userId: string, projectId: string, body: {
+        title: string;
+        description: string;
+        severity: ReportSeverity;
+    }): Promise<{
+        project: {
+            id: string;
+            title: string;
+            clientId: string;
+            selectedProviderId: string | null;
+        };
+        id: string;
+        description: string;
+        title: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.ReportStatus;
+        files: {
+            id: string;
+            createdAt: Date;
+            originalName: string;
+            mimeType: string;
+            size: number;
+        }[];
+        projectId: string;
+        submittedBy: string;
+        severity: import(".prisma/client").$Enums.ReportSeverity;
+        triageNotes: string | null;
+        aiTriageHints: import("@prisma/client/runtime/library").JsonValue;
+        validatedBy: string | null;
+        submitter: {
+            email: string;
+            id: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        };
+        validator: {
+            email: string;
+            id: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        } | null;
+    }>;
     setWebhookEnabled(userId: string, id: string, enabled: boolean): Promise<{
         id: string;
         label: string;

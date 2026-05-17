@@ -16,7 +16,10 @@ exports.V1Controller = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const api_key_guard_1 = require("./api-key.guard");
+const api_key_rate_limit_guard_1 = require("./api-key-rate-limit.guard");
 const integrations_service_1 = require("./integrations.service");
+const api_scopes_1 = require("./api-scopes");
+const v1_create_report_dto_1 = require("./dto/v1-create-report.dto");
 let V1Controller = class V1Controller {
     constructor(integrations) {
         this.integrations = integrations;
@@ -38,6 +41,10 @@ let V1Controller = class V1Controller {
     }
     listMilestones(req, id) {
         return this.integrations.listMilestonesForApiUser(this.userId(req), id);
+    }
+    createReport(req, id, dto) {
+        (0, api_scopes_1.requireApiScope)(req.apiUser?.scopes ?? [], 'write:reports');
+        return this.integrations.createReportForApiUser(this.userId(req), id, dto);
     }
 };
 exports.V1Controller = V1Controller;
@@ -74,12 +81,21 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], V1Controller.prototype, "listMilestones", null);
+__decorate([
+    (0, common_1.Post)('projects/:id/reports'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, v1_create_report_dto_1.V1CreateReportDto]),
+    __metadata("design:returntype", void 0)
+], V1Controller.prototype, "createReport", null);
 exports.V1Controller = V1Controller = __decorate([
     (0, swagger_1.ApiTags)('v1'),
     (0, swagger_1.ApiSecurity)('api-key'),
     (0, swagger_1.ApiHeader)({ name: 'X-API-Key', description: 'API key from /integrations/api-keys' }),
     (0, common_1.Controller)('v1'),
-    (0, common_1.UseGuards)(api_key_guard_1.ApiKeyGuard),
+    (0, common_1.UseGuards)(api_key_guard_1.ApiKeyGuard, api_key_rate_limit_guard_1.ApiKeyRateLimitGuard),
     __metadata("design:paramtypes", [integrations_service_1.IntegrationsService])
 ], V1Controller);
 //# sourceMappingURL=v1.controller.js.map

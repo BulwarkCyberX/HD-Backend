@@ -8,15 +8,23 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IntegrationsService = void 0;
 const common_1 = require("@nestjs/common");
 const crypto_1 = require("crypto");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
+const reports_service_1 = require("../reports/reports.service");
+const webhook_dispatcher_service_1 = require("./webhook-dispatcher.service");
+const api_scopes_1 = require("./api-scopes");
 let IntegrationsService = class IntegrationsService {
-    constructor(prisma) {
+    constructor(prisma, webhooks, reports) {
         this.prisma = prisma;
+        this.webhooks = webhooks;
+        this.reports = reports;
     }
     async listApiKeys(userId) {
         return this.prisma.apiKey.findMany({
@@ -32,14 +40,15 @@ let IntegrationsService = class IntegrationsService {
             },
         });
     }
-    async createApiKey(userId, label) {
+    async createApiKey(userId, label, scopes) {
+        const resolvedScopes = (0, api_scopes_1.parseApiScopes)(scopes);
         const raw = `hd_live_${(0, crypto_1.randomBytes)(24).toString('hex')}`;
         const keyHash = (0, crypto_1.createHash)('sha256').update(raw, 'utf8').digest('hex');
         const keyPrefix = raw.slice(0, 16);
         await this.prisma.apiKey.create({
-            data: { userId, label, keyPrefix, keyHash, scopes: ['read'] },
+            data: { userId, label, keyPrefix, keyHash, scopes: resolvedScopes },
         });
-        return { apiKey: raw, keyPrefix, label, scopes: ['read'] };
+        return { apiKey: raw, keyPrefix, label, scopes: resolvedScopes };
     }
     async revokeApiKey(userId, keyId) {
         const row = await this.prisma.apiKey.findFirst({ where: { id: keyId, userId } });
@@ -219,6 +228,47 @@ let IntegrationsService = class IntegrationsService {
             },
         });
     }
+    async sendWebhookTest(userId, endpointId) {
+        const endpoint = await this.prisma.webhookEndpoint.findFirst({
+            where: { id: endpointId, userId },
+            select: { id: true },
+        });
+        if (!endpoint)
+            throw new common_1.NotFoundException('Webhook not found');
+        await this.webhooks.dispatchTest(userId, endpointId);
+        return { ok: true, message: 'Test webhook queued' };
+    }
+    async retryDelivery(userId, deliveryId) {
+        const delivery = await this.getDeliveryForRetry(userId, deliveryId);
+        const payload = delivery.payload;
+        await this.webhooks.replayDelivery(delivery.endpointId, delivery.event, payload);
+        return { ok: true, message: 'Delivery re-queued' };
+    }
+    async getDeliveryForRetry(userId, deliveryId) {
+        const delivery = await this.prisma.webhookDelivery.findFirst({
+            where: { id: deliveryId, endpoint: { userId } },
+            select: {
+                id: true,
+                endpointId: true,
+                event: true,
+                payload: true,
+                success: true,
+            },
+        });
+        if (!delivery)
+            throw new common_1.NotFoundException('Delivery not found');
+        return delivery;
+    }
+    async createReportForApiUser(userId, projectId, body) {
+        await this.assertProjectAccess(userId, projectId);
+        return this.reports.create({
+            projectId,
+            submittedBy: userId,
+            title: body.title,
+            description: body.description,
+            severity: body.severity,
+        });
+    }
     async setWebhookEnabled(userId, id, enabled) {
         const row = await this.prisma.webhookEndpoint.findFirst({ where: { id, userId } });
         if (!row)
@@ -233,6 +283,9 @@ let IntegrationsService = class IntegrationsService {
 exports.IntegrationsService = IntegrationsService;
 exports.IntegrationsService = IntegrationsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __param(2, (0, common_1.Inject)((0, common_1.forwardRef)(() => reports_service_1.ReportsService))),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        webhook_dispatcher_service_1.WebhookDispatcherService,
+        reports_service_1.ReportsService])
 ], IntegrationsService);
 //# sourceMappingURL=integrations.service.js.map

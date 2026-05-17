@@ -18,7 +18,7 @@ export declare class IntegrationsController {
         apiKey: string;
         keyPrefix: string;
         label: string;
-        scopes: string[];
+        scopes: ("read" | "write:reports")[];
     }>;
     revokeApiKey(user: RequestUser, id: string): Promise<{
         ok: boolean;
@@ -60,4 +60,12 @@ export declare class IntegrationsController {
         success: boolean;
         errorMessage: string | null;
     }[]>;
+    testWebhook(user: RequestUser, id: string): Promise<{
+        ok: boolean;
+        message: string;
+    }>;
+    retryDelivery(user: RequestUser, deliveryId: string): Promise<{
+        ok: boolean;
+        message: string;
+    }>;
 }

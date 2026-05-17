@@ -18,6 +18,7 @@ const bullmq_1 = require("@nestjs/bullmq");
 const common_1 = require("@nestjs/common");
 const bullmq_2 = require("bullmq");
 const crypto_1 = require("crypto");
+const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const webhook_delivery_service_1 = require("./webhook-delivery.service");
 let WebhookDispatcherService = WebhookDispatcherService_1 = class WebhookDispatcherService {
@@ -26,6 +27,26 @@ let WebhookDispatcherService = WebhookDispatcherService_1 = class WebhookDispatc
         this.delivery = delivery;
         this.webhookQueue = webhookQueue;
         this.logger = new common_1.Logger(WebhookDispatcherService_1.name);
+    }
+    async dispatchTest(userId, endpointId) {
+        const endpoint = await this.prisma.webhookEndpoint.findFirst({
+            where: { id: endpointId, userId, enabled: true },
+            select: { id: true, events: true },
+        });
+        if (!endpoint)
+            return;
+        const event = endpoint.events[0] ?? client_1.WebhookEventType.BID_ACCEPTED;
+        const payload = {
+            id: (0, crypto_1.randomBytes)(12).toString('hex'),
+            event,
+            createdAt: new Date().toISOString(),
+            data: { test: true, message: 'HackersDeal webhook connectivity test' },
+        };
+        await this.enqueue(endpoint.id, event, payload);
+    }
+    async replayDelivery(endpointId, event, payload) {
+        const p = payload;
+        await this.enqueue(endpointId, event, p);
     }
     async dispatch(userId, event, data) {
         const endpoints = await this.prisma.webhookEndpoint.findMany({
@@ -41,19 +62,22 @@ let WebhookDispatcherService = WebhookDispatcherService_1 = class WebhookDispatc
             data,
         };
         for (const endpoint of endpoints) {
-            const job = { endpointId: endpoint.id, event, payload, attempt: 1 };
-            try {
-                await this.webhookQueue.add('deliver', job, {
-                    attempts: 4,
-                    backoff: { type: 'exponential', delay: 5_000 },
-                    removeOnComplete: 100,
-                    removeOnFail: 200,
-                });
-            }
-            catch (err) {
-                this.logger.warn(`Webhook queue unavailable, delivering inline: ${err instanceof Error ? err.message : String(err)}`);
-                void this.delivery.deliver(job).catch(() => undefined);
-            }
+            await this.enqueue(endpoint.id, event, payload);
+        }
+    }
+    async enqueue(endpointId, event, payload) {
+        const job = { endpointId, event, payload, attempt: 1 };
+        try {
+            await this.webhookQueue.add('deliver', job, {
+                attempts: 4,
+                backoff: { type: 'exponential', delay: 5_000 },
+                removeOnComplete: 100,
+                removeOnFail: 200,
+            });
+        }
+        catch (err) {
+            this.logger.warn(`Webhook queue unavailable, delivering inline: ${err instanceof Error ? err.message : String(err)}`);
+            void this.delivery.deliver(job).catch(() => undefined);
         }
     }
 };

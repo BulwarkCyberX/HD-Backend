@@ -16,13 +16,15 @@ const webhook_dispatcher_service_1 = require("./webhook-dispatcher.service");
 const webhook_delivery_service_1 = require("./webhook-delivery.service");
 const webhook_processor_1 = require("./webhook.processor");
 const api_key_guard_1 = require("./api-key.guard");
+const api_key_rate_limit_guard_1 = require("./api-key-rate-limit.guard");
 const prisma_module_1 = require("../../prisma/prisma.module");
+const reports_module_1 = require("../reports/reports.module");
 let IntegrationsModule = class IntegrationsModule {
 };
 exports.IntegrationsModule = IntegrationsModule;
 exports.IntegrationsModule = IntegrationsModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, bullmq_1.BullModule.registerQueue({ name: 'webhooks' })],
+        imports: [prisma_module_1.PrismaModule, bullmq_1.BullModule.registerQueue({ name: 'webhooks' }), (0, common_1.forwardRef)(() => reports_module_1.ReportsModule)],
         controllers: [integrations_controller_1.IntegrationsController, v1_controller_1.V1Controller],
         providers: [
             integrations_service_1.IntegrationsService,
@@ -30,6 +32,7 @@ exports.IntegrationsModule = IntegrationsModule = __decorate([
             webhook_dispatcher_service_1.WebhookDispatcherService,
             webhook_processor_1.WebhookProcessor,
             api_key_guard_1.ApiKeyGuard,
+            api_key_rate_limit_guard_1.ApiKeyRateLimitGuard,
         ],
         exports: [integrations_service_1.IntegrationsService, webhook_dispatcher_service_1.WebhookDispatcherService],
     })

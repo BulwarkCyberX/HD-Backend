@@ -10,13 +10,15 @@ exports.TrustModule = void 0;
 const common_1 = require("@nestjs/common");
 const trust_controller_1 = require("./trust.controller");
 const trust_service_1 = require("./trust.service");
+const fraud_service_1 = require("./fraud.service");
 let TrustModule = class TrustModule {
 };
 exports.TrustModule = TrustModule;
 exports.TrustModule = TrustModule = __decorate([
     (0, common_1.Module)({
         controllers: [trust_controller_1.TrustController],
-        providers: [trust_service_1.TrustService],
+        providers: [trust_service_1.TrustService, fraud_service_1.FraudService],
+        exports: [trust_service_1.TrustService, fraud_service_1.FraudService],
     })
 ], TrustModule);
 //# sourceMappingURL=trust.module.js.map

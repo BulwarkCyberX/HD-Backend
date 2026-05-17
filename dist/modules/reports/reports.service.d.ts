@@ -4,13 +4,15 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { DomainEventsService } from '../realtime/domain-events.service';
 import { AiTriageService } from '../ai/ai-triage.service';
 import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
+import { FraudService } from '../trust/fraud.service';
 export declare class ReportsService {
     private readonly prisma;
     private readonly notifications;
     private readonly events;
     private readonly aiTriage;
     private readonly webhooks;
-    constructor(prisma: PrismaService, notifications: NotificationsService, events: DomainEventsService, aiTriage: AiTriageService, webhooks: WebhookDispatcherService);
+    private readonly fraud;
+    constructor(prisma: PrismaService, notifications: NotificationsService, events: DomainEventsService, aiTriage: AiTriageService, webhooks: WebhookDispatcherService, fraud: FraudService);
     private readonly reportSelect;
     private assertProjectParticipant;
     create(input: {

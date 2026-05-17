@@ -9,21 +9,24 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateApiKeyDto = void 0;
+exports.V1CreateReportDto = void 0;
 const class_validator_1 = require("class-validator");
-const api_scopes_1 = require("../api-scopes");
-class CreateApiKeyDto {
+const client_1 = require("@prisma/client");
+class V1CreateReportDto {
 }
-exports.CreateApiKeyDto = CreateApiKeyDto;
+exports.V1CreateReportDto = V1CreateReportDto;
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(2),
+    (0, class_validator_1.MinLength)(3),
     __metadata("design:type", String)
-], CreateApiKeyDto.prototype, "label", void 0);
+], V1CreateReportDto.prototype, "title", void 0);
 __decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsIn)(api_scopes_1.API_SCOPES, { each: true }),
-    __metadata("design:type", Array)
-], CreateApiKeyDto.prototype, "scopes", void 0);
-//# sourceMappingURL=create-api-key.dto.js.map
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(10),
+    __metadata("design:type", String)
+], V1CreateReportDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(client_1.ReportSeverity),
+    __metadata("design:type", String)
+], V1CreateReportDto.prototype, "severity", void 0);
+//# sourceMappingURL=v1-create-report.dto.js.map

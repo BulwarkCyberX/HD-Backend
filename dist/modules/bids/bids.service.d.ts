@@ -5,6 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TransactionalEmailService } from '../email/transactional-email.service';
 import { DomainEventsService } from '../realtime/domain-events.service';
+import { FraudService } from '../trust/fraud.service';
 export declare class BidsService {
     private readonly prisma;
     private readonly notifications;
@@ -12,7 +13,8 @@ export declare class BidsService {
     private readonly events;
     private readonly hourly;
     private readonly webhooks;
-    constructor(prisma: PrismaService, notifications: NotificationsService, transactional: TransactionalEmailService, events: DomainEventsService, hourly: HourlyService, webhooks: WebhookDispatcherService);
+    private readonly fraud;
+    constructor(prisma: PrismaService, notifications: NotificationsService, transactional: TransactionalEmailService, events: DomainEventsService, hourly: HourlyService, webhooks: WebhookDispatcherService, fraud: FraudService);
     private readonly bidSelect;
     create(input: {
         providerId: string;

@@ -18,14 +18,16 @@ const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const transactional_email_service_1 = require("../email/transactional-email.service");
 const domain_events_service_1 = require("../realtime/domain-events.service");
+const fraud_service_1 = require("../trust/fraud.service");
 let BidsService = class BidsService {
-    constructor(prisma, notifications, transactional, events, hourly, webhooks) {
+    constructor(prisma, notifications, transactional, events, hourly, webhooks, fraud) {
         this.prisma = prisma;
         this.notifications = notifications;
         this.transactional = transactional;
         this.events = events;
         this.hourly = hourly;
         this.webhooks = webhooks;
+        this.fraud = fraud;
         this.bidSelect = {
             id: true,
             projectId: true,
@@ -108,6 +110,7 @@ let BidsService = class BidsService {
             })
                 .catch(() => undefined);
         }
+        void this.fraud.checkBidVelocity(input.providerId).catch(() => undefined);
         return result;
     }
     async listForProject(input) {
@@ -254,6 +257,7 @@ exports.BidsService = BidsService = __decorate([
         transactional_email_service_1.TransactionalEmailService,
         domain_events_service_1.DomainEventsService,
         hourly_service_1.HourlyService,
-        webhook_dispatcher_service_1.WebhookDispatcherService])
+        webhook_dispatcher_service_1.WebhookDispatcherService,
+        fraud_service_1.FraudService])
 ], BidsService);
 //# sourceMappingURL=bids.service.js.map

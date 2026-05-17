@@ -8,5 +8,8 @@ export declare class WebhookDispatcherService {
     private readonly webhookQueue;
     private readonly logger;
     constructor(prisma: PrismaService, delivery: WebhookDeliveryService, webhookQueue: Queue<WebhookDeliverJob>);
+    dispatchTest(userId: string, endpointId: string): Promise<void>;
+    replayDelivery(endpointId: string, event: WebhookEventType, payload: object): Promise<void>;
     dispatch(userId: string, event: WebhookEventType, data: Record<string, unknown>): Promise<void>;
+    private enqueue;
 }

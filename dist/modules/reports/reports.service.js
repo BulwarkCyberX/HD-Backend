@@ -18,13 +18,15 @@ const domain_events_service_1 = require("../realtime/domain-events.service");
 const ai_triage_service_1 = require("../ai/ai-triage.service");
 const webhook_dispatcher_service_1 = require("../integrations/webhook-dispatcher.service");
 const client_2 = require("@prisma/client");
+const fraud_service_1 = require("../trust/fraud.service");
 let ReportsService = class ReportsService {
-    constructor(prisma, notifications, events, aiTriage, webhooks) {
+    constructor(prisma, notifications, events, aiTriage, webhooks, fraud) {
         this.prisma = prisma;
         this.notifications = notifications;
         this.events = events;
         this.aiTriage = aiTriage;
         this.webhooks = webhooks;
+        this.fraud = fraud;
         this.reportSelect = {
             id: true,
             projectId: true,
@@ -93,6 +95,7 @@ let ReportsService = class ReportsService {
         });
         this.events.reportUpdated({ projectId: input.projectId, report: created });
         void this.aiTriage.runForReport(created.id, input.submittedBy).catch(() => undefined);
+        void this.fraud.checkReportVelocity(input.submittedBy).catch(() => undefined);
         return created;
     }
     async runAiTriage(input) {
@@ -209,6 +212,7 @@ exports.ReportsService = ReportsService = __decorate([
         notifications_service_1.NotificationsService,
         domain_events_service_1.DomainEventsService,
         ai_triage_service_1.AiTriageService,
-        webhook_dispatcher_service_1.WebhookDispatcherService])
+        webhook_dispatcher_service_1.WebhookDispatcherService,
+        fraud_service_1.FraudService])
 ], ReportsService);
 //# sourceMappingURL=reports.service.js.map
