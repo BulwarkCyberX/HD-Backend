@@ -6,6 +6,7 @@ import { DomainEventsService } from '../realtime/domain-events.service';
 import { AiTriageService } from '../ai/ai-triage.service';
 import { WebhookDispatcherService } from '../integrations/webhook-dispatcher.service';
 import { WebhookEventType } from '@prisma/client';
+import { FraudService } from '../trust/fraud.service';
 
 @Injectable()
 export class ReportsService {
@@ -15,6 +16,7 @@ export class ReportsService {
     private readonly events: DomainEventsService,
     private readonly aiTriage: AiTriageService,
     private readonly webhooks: WebhookDispatcherService,
+    private readonly fraud: FraudService,
   ) {}
 
   private readonly reportSelect = {
@@ -95,6 +97,7 @@ export class ReportsService {
     this.events.reportUpdated({ projectId: input.projectId, report: created });
 
     void this.aiTriage.runForReport(created.id, input.submittedBy).catch(() => undefined);
+    void this.fraud.checkReportVelocity(input.submittedBy).catch(() => undefined);
 
     return created;
   }

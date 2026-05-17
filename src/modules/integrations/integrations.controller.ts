@@ -21,7 +21,7 @@ export class IntegrationsController {
 
   @Post('api-keys')
   createApiKey(@CurrentUser() user: RequestUser, @Body() dto: CreateApiKeyDto) {
-    return this.integrations.createApiKey(user.userId, dto.label);
+    return this.integrations.createApiKey(user.userId, dto.label, dto.scopes);
   }
 
   @Delete('api-keys/:id')
@@ -56,5 +56,15 @@ export class IntegrationsController {
   @Get('webhooks/:id/deliveries')
   listDeliveries(@CurrentUser() user: RequestUser, @Param('id') id: string) {
     return this.integrations.listDeliveries(user.userId, id);
+  }
+
+  @Post('webhooks/:id/test')
+  testWebhook(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.integrations.sendWebhookTest(user.userId, id);
+  }
+
+  @Post('webhooks/deliveries/:deliveryId/retry')
+  retryDelivery(@CurrentUser() user: RequestUser, @Param('deliveryId') deliveryId: string) {
+    return this.integrations.retryDelivery(user.userId, deliveryId);
   }
 }

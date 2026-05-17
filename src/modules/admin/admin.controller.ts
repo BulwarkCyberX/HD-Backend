@@ -8,6 +8,7 @@ import { EmailTemplateService } from '../email/email-template.service';
 import { AdminProjectsService } from './admin-projects.service';
 import { BidsService } from '../bids/bids.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { FraudService } from '../trust/fraud.service';
 import { UpdateEmailTemplateDto } from './dto/update-email-template.dto';
 import { AdminUpdateProjectDto } from './dto/admin-update-project.dto';
 
@@ -20,6 +21,7 @@ export class AdminController {
     private readonly adminProjects: AdminProjectsService,
     private readonly bids: BidsService,
     private readonly analytics: AnalyticsService,
+    private readonly fraud: FraudService,
   ) {}
 
   @Get('overview')
@@ -40,6 +42,11 @@ export class AdminController {
   @Get('analytics/summary')
   analyticsSummary() {
     return this.analytics.adminSummary();
+  }
+
+  @Get('fraud/flags')
+  listFraudFlags() {
+    return this.fraud.listFlaggedUsers();
   }
 
   @Get('email-templates')

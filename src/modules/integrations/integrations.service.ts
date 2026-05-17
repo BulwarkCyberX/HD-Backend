@@ -1,11 +1,19 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
-import { ReportStatus, UserRole, WebhookEventType } from '@prisma/client';
+import { ReportSeverity, ReportStatus, UserRole, WebhookEventType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ReportsService } from '../reports/reports.service';
+import { WebhookDispatcherService } from './webhook-dispatcher.service';
+import { parseApiScopes } from './api-scopes';
 
 @Injectable()
 export class IntegrationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly webhooks: WebhookDispatcherService,
+    @Inject(forwardRef(() => ReportsService))
+    private readonly reports: ReportsService,
+  ) {}
 
   async listApiKeys(userId: string) {
     return this.prisma.apiKey.findMany({
@@ -22,14 +30,15 @@ export class IntegrationsService {
     });
   }
 
-  async createApiKey(userId: string, label: string) {
+  async createApiKey(userId: string, label: string, scopes?: string[]) {
+    const resolvedScopes = parseApiScopes(scopes);
     const raw = `hd_live_${randomBytes(24).toString('hex')}`;
     const keyHash = createHash('sha256').update(raw, 'utf8').digest('hex');
     const keyPrefix = raw.slice(0, 16);
     await this.prisma.apiKey.create({
-      data: { userId, label, keyPrefix, keyHash, scopes: ['read'] },
+      data: { userId, label, keyPrefix, keyHash, scopes: resolvedScopes },
     });
-    return { apiKey: raw, keyPrefix, label, scopes: ['read'] };
+    return { apiKey: raw, keyPrefix, label, scopes: resolvedScopes };
   }
 
   async revokeApiKey(userId: string, keyId: string) {
@@ -216,6 +225,58 @@ export class IntegrationsService {
         releasedAt: true,
         createdAt: true,
       },
+    });
+  }
+
+  async sendWebhookTest(userId: string, endpointId: string) {
+    const endpoint = await this.prisma.webhookEndpoint.findFirst({
+      where: { id: endpointId, userId },
+      select: { id: true },
+    });
+    if (!endpoint) throw new NotFoundException('Webhook not found');
+    await this.webhooks.dispatchTest(userId, endpointId);
+    return { ok: true, message: 'Test webhook queued' };
+  }
+
+  async retryDelivery(userId: string, deliveryId: string) {
+    const delivery = await this.getDeliveryForRetry(userId, deliveryId);
+    const payload = delivery.payload as {
+      id: string;
+      event: WebhookEventType;
+      createdAt: string;
+      data: Record<string, unknown>;
+    };
+    await this.webhooks.replayDelivery(delivery.endpointId, delivery.event, payload);
+    return { ok: true, message: 'Delivery re-queued' };
+  }
+
+  async getDeliveryForRetry(userId: string, deliveryId: string) {
+    const delivery = await this.prisma.webhookDelivery.findFirst({
+      where: { id: deliveryId, endpoint: { userId } },
+      select: {
+        id: true,
+        endpointId: true,
+        event: true,
+        payload: true,
+        success: true,
+      },
+    });
+    if (!delivery) throw new NotFoundException('Delivery not found');
+    return delivery;
+  }
+
+  async createReportForApiUser(
+    userId: string,
+    projectId: string,
+    body: { title: string; description: string; severity: ReportSeverity },
+  ) {
+    await this.assertProjectAccess(userId, projectId);
+    return this.reports.create({
+      projectId,
+      submittedBy: userId,
+      title: body.title,
+      description: body.description,
+      severity: body.severity,
     });
   }
 

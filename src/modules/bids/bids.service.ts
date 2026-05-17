@@ -13,6 +13,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TransactionalEmailService } from '../email/transactional-email.service';
 import { DomainEventsService } from '../realtime/domain-events.service';
+import { FraudService } from '../trust/fraud.service';
 
 @Injectable()
 export class BidsService {
@@ -23,6 +24,7 @@ export class BidsService {
     private readonly events: DomainEventsService,
     private readonly hourly: HourlyService,
     private readonly webhooks: WebhookDispatcherService,
+    private readonly fraud: FraudService,
   ) {}
 
   private readonly bidSelect = {
@@ -117,6 +119,8 @@ export class BidsService {
         })
         .catch(() => undefined);
     }
+
+    void this.fraud.checkBidVelocity(input.providerId).catch(() => undefined);
 
     return result;
   }

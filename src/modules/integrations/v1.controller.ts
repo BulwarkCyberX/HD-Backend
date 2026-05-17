@@ -1,7 +1,10 @@
-import { Controller, Get, Param, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiHeader, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { ApiKeyGuard } from './api-key.guard';
+import { ApiKeyRateLimitGuard } from './api-key-rate-limit.guard';
 import { IntegrationsService } from './integrations.service';
+import { requireApiScope } from './api-scopes';
+import { V1CreateReportDto } from './dto/v1-create-report.dto';
 
 type ApiRequest = { apiUser?: { userId: string; scopes: string[] } };
 
@@ -9,7 +12,7 @@ type ApiRequest = { apiUser?: { userId: string; scopes: string[] } };
 @ApiSecurity('api-key')
 @ApiHeader({ name: 'X-API-Key', description: 'API key from /integrations/api-keys' })
 @Controller('v1')
-@UseGuards(ApiKeyGuard)
+@UseGuards(ApiKeyGuard, ApiKeyRateLimitGuard)
 export class V1Controller {
   constructor(private readonly integrations: IntegrationsService) {}
 
@@ -45,5 +48,11 @@ export class V1Controller {
   @Get('projects/:id/milestones')
   listMilestones(@Req() req: ApiRequest, @Param('id') id: string) {
     return this.integrations.listMilestonesForApiUser(this.userId(req), id);
+  }
+
+  @Post('projects/:id/reports')
+  createReport(@Req() req: ApiRequest, @Param('id') id: string, @Body() dto: V1CreateReportDto) {
+    requireApiScope(req.apiUser?.scopes ?? [], 'write:reports');
+    return this.integrations.createReportForApiUser(this.userId(req), id, dto);
   }
 }

@@ -6,9 +6,10 @@ import { EmailModule } from '../email/email.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { HourlyModule } from '../hourly/hourly.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
+import { TrustModule } from '../trust/trust.module';
 
 @Module({
-  imports: [NotificationsModule, EmailModule, RealtimeModule, HourlyModule, IntegrationsModule],
+  imports: [NotificationsModule, EmailModule, RealtimeModule, HourlyModule, IntegrationsModule, TrustModule],
   controllers: [BidsController],
   providers: [BidsService],
   exports: [BidsService],
