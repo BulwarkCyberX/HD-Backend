@@ -19,13 +19,23 @@ export class SessionService {
   ) {}
 
   private async getSessionPolicy() {
-    const settings = await this.prisma.platformSettings.findUnique({ where: { id: 'singleton' } });
-    return {
-      policy: settings?.sessionPolicy ?? SessionPolicy.MULTI_DEVICE,
-      maxSessions: settings?.maxConcurrentSessions ?? 0,
-      refreshDays: settings?.refreshTokenExpiryDays ?? Number(this.config.get<string>('JWT_REFRESH_EXPIRES_DAYS') ?? '7'),
-      accessMinutes: settings?.accessTokenExpiryMinutes ?? 15,
-    };
+    try {
+      const settings = await this.prisma.platformSettings.findUnique({ where: { id: 'singleton' } });
+      return {
+        policy: settings?.sessionPolicy ?? SessionPolicy.MULTI_DEVICE,
+        maxSessions: settings?.maxConcurrentSessions ?? 0,
+        refreshDays: settings?.refreshTokenExpiryDays ?? Number(this.config.get<string>('JWT_REFRESH_EXPIRES_DAYS') ?? '7'),
+        accessMinutes: settings?.accessTokenExpiryMinutes ?? 15,
+      };
+    } catch {
+      // Table might not exist yet (migration not applied) — use env defaults
+      return {
+        policy: SessionPolicy.MULTI_DEVICE,
+        maxSessions: 0,
+        refreshDays: Number(this.config.get<string>('JWT_REFRESH_EXPIRES_DAYS') ?? '7'),
+        accessMinutes: 15,
+      };
+    }
   }
 
   async issueTokenPair(input: {

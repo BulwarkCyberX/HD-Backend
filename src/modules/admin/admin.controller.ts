@@ -138,4 +138,12 @@ export class AdminController {
   updateSettings(@Body() body: Record<string, unknown>) {
     return this.platformSettings.update(body as any);
   }
+
+  @Post('settings/test-email')
+  async testEmail(@Body() body: { to: string }) {
+    if (!body.to?.trim()) {
+      return { success: false, error: 'Recipient email is required' };
+    }
+    return this.platformSettings.sendTestEmail(body.to.trim());
+  }
 }

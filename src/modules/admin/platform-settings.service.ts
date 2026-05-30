@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AppMailService } from '../email/app-mail.service';
 import { MailProvider, SessionPolicy } from '@prisma/client';
 
 export type PlatformSettingsDto = {
@@ -31,7 +32,10 @@ export type PlatformSettingsDto = {
 export class PlatformSettingsService {
   private readonly logger = new Logger(PlatformSettingsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mail: AppMailService,
+  ) {}
 
   async get(): Promise<PlatformSettingsDto> {
     const row = await this.prisma.platformSettings.upsert({
@@ -170,5 +174,30 @@ export class PlatformSettingsService {
       sessionPolicy: row.sessionPolicy,
       maxConcurrentSessions: row.maxConcurrentSessions,
     };
+  }
+
+  async sendTestEmail(to: string): Promise<{ success: boolean; error?: string }> {
+    this.logger.log(`Test email requested to: ${to}`);
+    try {
+      await this.mail.send({
+        to,
+        subject: '✅ HackersDeal — Test Email',
+        text: 'This is a test email from HackersDeal platform settings. If you received this, your email configuration is working correctly.',
+        html: `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+            <h2 style="color: #097C87;">✅ Email Configuration Working</h2>
+            <p>This is a test email sent from the <strong>HackersDeal Admin Panel</strong>.</p>
+            <p>If you're reading this, your SMTP/mail settings are configured correctly.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;" />
+            <p style="font-size: 12px; color: #64748b;">Sent at: ${new Date().toISOString()}</p>
+          </div>
+        `,
+      });
+      return { success: true };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Test email failed: ${message}`);
+      return { success: false, error: message };
+    }
   }
 }
