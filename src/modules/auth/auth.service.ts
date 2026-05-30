@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -40,6 +40,8 @@ function hashOpaqueToken(raw: string) {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -127,12 +129,17 @@ export class AuthService {
     const webOrigin = (this.config.get<string>('WEB_ORIGIN') ?? 'http://localhost:3000').replace(/\/$/, '');
     const verifyUrl = `${webOrigin}/auth/verify-email/confirm?token=${encodeURIComponent(rawToken)}`;
 
-    await this.transactional.sendSignupVerification({
+    // Fire-and-forget: don't block signup response on email delivery
+    this.transactional.sendSignupVerification({
       to: user.email,
       firstName: user.firstName ?? 'there',
       verifyUrl,
       otp,
       expiresHours: verifyDisplayHours,
+    }).then(() => {
+      this.logger.log(`Verification email sent to ${user.email}`);
+    }).catch((err) => {
+      this.logger.error(`Failed to send verification email to ${user.email}: ${err instanceof Error ? err.message : String(err)}`);
     });
 
     return {

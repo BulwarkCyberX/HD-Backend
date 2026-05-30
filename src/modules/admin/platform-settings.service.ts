@@ -4,6 +4,7 @@ import { MailProvider, SessionPolicy } from '@prisma/client';
 
 export type PlatformSettingsDto = {
   mailProvider: MailProvider;
+  primaryMailProvider: MailProvider;
   mailFromAddress: string;
   mailFromName: string;
   mailReplyTo: string;
@@ -12,6 +13,10 @@ export type PlatformSettingsDto = {
   smtpUser: string;
   smtpPassword: string;
   sendgridApiKey: string;
+  awsSesAccessKeyId: string;
+  awsSesSecretKey: string;
+  awsSesRegion: string;
+  postmarkServerToken: string;
   accessTokenExpiryMinutes: number;
   refreshTokenExpiryDays: number;
   emailVerificationCodeValue: number;
@@ -36,6 +41,7 @@ export class PlatformSettingsService {
     });
     return {
       mailProvider: row.mailProvider,
+      primaryMailProvider: row.primaryMailProvider,
       mailFromAddress: row.mailFromAddress,
       mailFromName: row.mailFromName,
       mailReplyTo: row.mailReplyTo,
@@ -44,6 +50,10 @@ export class PlatformSettingsService {
       smtpUser: row.smtpUser,
       smtpPassword: row.smtpPassword ? '••••••••' : '',
       sendgridApiKey: row.sendgridApiKey ? '••••••••' : '',
+      awsSesAccessKeyId: row.awsSesAccessKeyId ? '••••••••' : '',
+      awsSesSecretKey: row.awsSesSecretKey ? '••••••••' : '',
+      awsSesRegion: row.awsSesRegion,
+      postmarkServerToken: row.postmarkServerToken ? '••••••••' : '',
       accessTokenExpiryMinutes: row.accessTokenExpiryMinutes,
       refreshTokenExpiryDays: row.refreshTokenExpiryDays,
       emailVerificationCodeValue: row.emailVerificationCodeValue,
@@ -64,13 +74,16 @@ export class PlatformSettingsService {
     });
   }
 
-  async update(data: Partial<Omit<PlatformSettingsDto, 'smtpPassword' | 'sendgridApiKey'>> & {
+  async update(data: Partial<Omit<PlatformSettingsDto, 'smtpPassword' | 'sendgridApiKey' | 'awsSesSecretKey' | 'postmarkServerToken'>> & {
     smtpPassword?: string;
     sendgridApiKey?: string;
+    awsSesSecretKey?: string;
+    postmarkServerToken?: string;
   }) {
     const updateData: Record<string, unknown> = {};
 
     if (data.mailProvider !== undefined) updateData.mailProvider = data.mailProvider;
+    if (data.primaryMailProvider !== undefined) updateData.primaryMailProvider = data.primaryMailProvider;
     if (data.mailFromAddress !== undefined) updateData.mailFromAddress = data.mailFromAddress.trim();
     if (data.mailFromName !== undefined) updateData.mailFromName = data.mailFromName.trim();
     if (data.mailReplyTo !== undefined) updateData.mailReplyTo = data.mailReplyTo.trim();
@@ -83,6 +96,18 @@ export class PlatformSettingsService {
     }
     if (data.sendgridApiKey && data.sendgridApiKey !== '••••••••') {
       updateData.sendgridApiKey = data.sendgridApiKey;
+    }
+    // AWS SES credentials
+    if (data.awsSesAccessKeyId !== undefined && data.awsSesAccessKeyId !== '••••••••') {
+      updateData.awsSesAccessKeyId = data.awsSesAccessKeyId.trim();
+    }
+    if (data.awsSesSecretKey && data.awsSesSecretKey !== '••••••••') {
+      updateData.awsSesSecretKey = data.awsSesSecretKey;
+    }
+    if (data.awsSesRegion !== undefined) updateData.awsSesRegion = data.awsSesRegion.trim();
+    // Postmark credentials
+    if (data.postmarkServerToken && data.postmarkServerToken !== '••••••••') {
+      updateData.postmarkServerToken = data.postmarkServerToken;
     }
     if (data.accessTokenExpiryMinutes !== undefined) {
       updateData.accessTokenExpiryMinutes = Math.max(1, Math.min(1440, Number(data.accessTokenExpiryMinutes)));
@@ -123,6 +148,7 @@ export class PlatformSettingsService {
 
     return {
       mailProvider: row.mailProvider,
+      primaryMailProvider: row.primaryMailProvider,
       mailFromAddress: row.mailFromAddress,
       mailFromName: row.mailFromName,
       mailReplyTo: row.mailReplyTo,
@@ -131,6 +157,10 @@ export class PlatformSettingsService {
       smtpUser: row.smtpUser,
       smtpPassword: row.smtpPassword ? '••••••••' : '',
       sendgridApiKey: row.sendgridApiKey ? '••••••••' : '',
+      awsSesAccessKeyId: row.awsSesAccessKeyId ? '••••••••' : '',
+      awsSesSecretKey: row.awsSesSecretKey ? '••••••••' : '',
+      awsSesRegion: row.awsSesRegion,
+      postmarkServerToken: row.postmarkServerToken ? '••••••••' : '',
       accessTokenExpiryMinutes: row.accessTokenExpiryMinutes,
       refreshTokenExpiryDays: row.refreshTokenExpiryDays,
       emailVerificationCodeValue: row.emailVerificationCodeValue,

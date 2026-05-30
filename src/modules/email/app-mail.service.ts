@@ -12,7 +12,7 @@ export type SendAppMailInput = {
   html?: string;
 };
 
-type MailDriver = 'smtp' | 'sendgrid' | 'none';
+type MailDriver = 'smtp' | 'sendgrid' | 'aws_ses' | 'postmark' | 'none';
 
 type ResolvedMailConfig = {
   driver: MailDriver;
@@ -24,6 +24,10 @@ type ResolvedMailConfig = {
   smtpUser: string;
   smtpPass: string;
   sendgridApiKey: string;
+  awsSesAccessKeyId: string;
+  awsSesSecretKey: string;
+  awsSesRegion: string;
+  postmarkServerToken: string;
 };
 
 @Injectable()
@@ -90,6 +94,12 @@ export class AppMailService {
 
   /** Resolve effective mail config: DB settings take priority over env vars */
   private async resolveConfig(): Promise<ResolvedMailConfig> {
+    const emptyConfig = (driver: MailDriver, fromAddress: string, fromName: string, replyTo: string): ResolvedMailConfig => ({
+      driver, fromAddress, fromName, replyTo,
+      smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '',
+      sendgridApiKey: '', awsSesAccessKeyId: '', awsSesSecretKey: '', awsSesRegion: 'us-east-1', postmarkServerToken: '',
+    });
+
     try {
       const dbSettings = await this.prisma.platformSettings.findUnique({ where: { id: 'singleton' } });
       if (dbSettings && dbSettings.mailProvider !== MailProvider.AUTO) {
@@ -99,67 +109,68 @@ export class AppMailService {
         const replyTo = dbSettings.mailReplyTo || fromAddress;
 
         if (dbSettings.mailProvider === MailProvider.NONE) {
-          return { driver: 'none', fromAddress, fromName, replyTo, smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '', sendgridApiKey: '' };
+          return emptyConfig('none', fromAddress, fromName, replyTo);
         }
         if (dbSettings.mailProvider === MailProvider.SMTP && dbSettings.smtpUser && dbSettings.smtpPassword) {
           return {
-            driver: 'smtp',
-            fromAddress,
-            fromName,
-            replyTo,
+            ...emptyConfig('smtp', fromAddress, fromName, replyTo),
             smtpHost: dbSettings.smtpHost || 'smtp.gmail.com',
             smtpPort: dbSettings.smtpPort || 587,
             smtpUser: dbSettings.smtpUser,
             smtpPass: dbSettings.smtpPassword,
-            sendgridApiKey: '',
           };
         }
         if (dbSettings.mailProvider === MailProvider.SENDGRID && dbSettings.sendgridApiKey) {
+          return { ...emptyConfig('sendgrid', fromAddress, fromName, replyTo), sendgridApiKey: dbSettings.sendgridApiKey };
+        }
+        if (dbSettings.mailProvider === MailProvider.AWS_SES && dbSettings.awsSesAccessKeyId && dbSettings.awsSesSecretKey) {
           return {
-            driver: 'sendgrid',
-            fromAddress,
-            fromName,
-            replyTo,
-            smtpHost: '',
-            smtpPort: 587,
-            smtpUser: '',
-            smtpPass: '',
-            sendgridApiKey: dbSettings.sendgridApiKey,
+            ...emptyConfig('aws_ses', fromAddress, fromName, replyTo),
+            awsSesAccessKeyId: dbSettings.awsSesAccessKeyId,
+            awsSesSecretKey: dbSettings.awsSesSecretKey,
+            awsSesRegion: dbSettings.awsSesRegion || 'us-east-1',
           };
+        }
+        if (dbSettings.mailProvider === MailProvider.POSTMARK && dbSettings.postmarkServerToken) {
+          return { ...emptyConfig('postmark', fromAddress, fromName, replyTo), postmarkServerToken: dbSettings.postmarkServerToken };
         }
       }
 
-      // AUTO mode from DB: check if DB has SMTP creds, then SendGrid, then fall through to env
+      // AUTO mode from DB: use primaryMailProvider as first choice, then fallback order
       if (dbSettings) {
         const fromAddress = dbSettings.mailFromAddress || this.envFromAddress;
         const fromName = dbSettings.mailFromName || this.envFromName;
         const replyTo = dbSettings.mailReplyTo || fromAddress;
 
-        if (dbSettings.smtpUser && dbSettings.smtpPassword) {
-          return {
-            driver: 'smtp',
-            fromAddress,
-            fromName,
-            replyTo,
-            smtpHost: dbSettings.smtpHost || 'smtp.gmail.com',
-            smtpPort: dbSettings.smtpPort || 587,
-            smtpUser: dbSettings.smtpUser,
-            smtpPass: dbSettings.smtpPassword,
-            sendgridApiKey: '',
-          };
-        }
-        if (dbSettings.sendgridApiKey) {
-          return {
-            driver: 'sendgrid',
-            fromAddress,
-            fromName,
-            replyTo,
-            smtpHost: '',
-            smtpPort: 587,
-            smtpUser: '',
-            smtpPass: '',
-            sendgridApiKey: dbSettings.sendgridApiKey,
-          };
+        // Build ordered list based on primaryMailProvider
+        const primary = dbSettings.primaryMailProvider || MailProvider.SMTP;
+        const allProviders: MailProvider[] = [MailProvider.SMTP, MailProvider.SENDGRID, MailProvider.AWS_SES, MailProvider.POSTMARK];
+        const ordered = [primary, ...allProviders.filter(p => p !== primary)];
+
+        for (const p of ordered) {
+          if (p === MailProvider.SMTP && dbSettings.smtpUser && dbSettings.smtpPassword) {
+            return {
+              ...emptyConfig('smtp', fromAddress, fromName, replyTo),
+              smtpHost: dbSettings.smtpHost || 'smtp.gmail.com',
+              smtpPort: dbSettings.smtpPort || 587,
+              smtpUser: dbSettings.smtpUser,
+              smtpPass: dbSettings.smtpPassword,
+            };
+          }
+          if (p === MailProvider.SENDGRID && dbSettings.sendgridApiKey) {
+            return { ...emptyConfig('sendgrid', fromAddress, fromName, replyTo), sendgridApiKey: dbSettings.sendgridApiKey };
+          }
+          if (p === MailProvider.AWS_SES && dbSettings.awsSesAccessKeyId && dbSettings.awsSesSecretKey) {
+            return {
+              ...emptyConfig('aws_ses', fromAddress, fromName, replyTo),
+              awsSesAccessKeyId: dbSettings.awsSesAccessKeyId,
+              awsSesSecretKey: dbSettings.awsSesSecretKey,
+              awsSesRegion: dbSettings.awsSesRegion || 'us-east-1',
+            };
+          }
+          if (p === MailProvider.POSTMARK && dbSettings.postmarkServerToken) {
+            return { ...emptyConfig('postmark', fromAddress, fromName, replyTo), postmarkServerToken: dbSettings.postmarkServerToken };
+          }
         }
       }
     } catch {
@@ -177,6 +188,10 @@ export class AppMailService {
       smtpUser: this.config.get<string>('GMAIL_SMTP_USER') ?? '',
       smtpPass: this.config.get<string>('GMAIL_SMTP_APP_PASSWORD') ?? '',
       sendgridApiKey: this.config.get<string>('SENDGRID_API_KEY') ?? '',
+      awsSesAccessKeyId: '',
+      awsSesSecretKey: '',
+      awsSesRegion: 'us-east-1',
+      postmarkServerToken: '',
     };
   }
 
@@ -191,9 +206,11 @@ export class AppMailService {
     const cfg = await this.resolveConfig();
 
     if (cfg.driver === 'none' || !cfg.fromAddress) {
-      this.logger.debug(`Skip mail to ${input.to}: mail not configured`);
+      this.logger.warn(`[MAIL SKIP] to=${input.to} reason=not_configured driver=${cfg.driver} fromAddress="${cfg.fromAddress}"`);
       return;
     }
+
+    this.logger.log(`[MAIL SEND] to=${input.to} subject="${input.subject}" driver=${cfg.driver} from=${cfg.fromAddress}`);
 
     const fromHeader = cfg.fromName ? `${cfg.fromName} <${cfg.fromAddress}>` : cfg.fromAddress;
 
@@ -209,7 +226,7 @@ export class AppMailService {
               auth: { user: cfg.smtpUser, pass: cfg.smtpPass },
             });
 
-        await transporter.sendMail({
+        const info = await transporter.sendMail({
           from: fromHeader,
           to: input.to.trim(),
           replyTo: cfg.replyTo || undefined,
@@ -217,9 +234,10 @@ export class AppMailService {
           text: input.text,
           html: input.html,
         });
+        this.logger.log(`[MAIL OK] to=${input.to} messageId=${info.messageId ?? 'n/a'}`);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(`SMTP send failed: ${message}`);
+        this.logger.error(`[MAIL FAIL] SMTP to=${input.to} error=${message}`);
       }
       return;
     }
@@ -235,9 +253,63 @@ export class AppMailService {
           text: input.text,
           html: input.html,
         });
+        this.logger.log(`[MAIL OK] SendGrid to=${input.to}`);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(`SendGrid send failed: ${message}`);
+        this.logger.error(`[MAIL FAIL] SendGrid to=${input.to} error=${message}`);
+      }
+    }
+
+    if (cfg.driver === 'aws_ses') {
+      try {
+        // Use nodemailer SES transport (works without @aws-sdk/client-ses package)
+        const transporter = nodemailer.createTransport({
+          host: `email-smtp.${cfg.awsSesRegion}.amazonaws.com`,
+          port: 587,
+          secure: false,
+          auth: { user: cfg.awsSesAccessKeyId, pass: cfg.awsSesSecretKey },
+        });
+        const info = await transporter.sendMail({
+          from: fromHeader,
+          to: input.to.trim(),
+          replyTo: cfg.replyTo || undefined,
+          subject: input.subject,
+          text: input.text,
+          html: input.html,
+        });
+        this.logger.log(`[MAIL OK] AWS SES to=${input.to} messageId=${info.messageId ?? 'n/a'}`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(`[MAIL FAIL] AWS SES to=${input.to} error=${message}`);
+      }
+    }
+
+    if (cfg.driver === 'postmark') {
+      try {
+        const response = await fetch('https://api.postmarkapp.com/email', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Postmark-Server-Token': cfg.postmarkServerToken,
+          },
+          body: JSON.stringify({
+            From: fromHeader,
+            To: input.to.trim(),
+            ReplyTo: cfg.replyTo || undefined,
+            Subject: input.subject,
+            TextBody: input.text,
+            HtmlBody: input.html || undefined,
+          }),
+        });
+        if (!response.ok) {
+          const body = await response.text();
+          throw new Error(`Postmark API ${response.status}: ${body}`);
+        }
+        this.logger.log(`[MAIL OK] Postmark to=${input.to}`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(`[MAIL FAIL] Postmark to=${input.to} error=${message}`);
       }
     }
   }
