@@ -11,7 +11,7 @@ import Redis from 'ioredis';
       useFactory: (config: ConfigService) => {
         const url = config.get<string>('REDIS_URL') ?? 'redis://127.0.0.1:6379';
         return {
-          connection: new Redis(url, { maxRetriesPerRequest: null }),
+          connection: new Redis(url, { maxRetriesPerRequest: null }) as any,
         };
       },
     }),
