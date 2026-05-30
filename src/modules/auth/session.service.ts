@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { JwtPayload } from '../../auth/auth.types';
-import { UserRole } from '@prisma/client';
+import { SessionPolicy, UserRole } from '@prisma/client';
 
 function hashRefreshToken(raw: string) {
   return createHash('sha256').update(raw, 'utf8').digest('hex');
@@ -18,14 +18,51 @@ export class SessionService {
     private readonly config: ConfigService,
   ) {}
 
+  private async getSessionPolicy() {
+    const settings = await this.prisma.platformSettings.findUnique({ where: { id: 'singleton' } });
+    return {
+      policy: settings?.sessionPolicy ?? SessionPolicy.MULTI_DEVICE,
+      maxSessions: settings?.maxConcurrentSessions ?? 0,
+      refreshDays: settings?.refreshTokenExpiryDays ?? Number(this.config.get<string>('JWT_REFRESH_EXPIRES_DAYS') ?? '7'),
+      accessMinutes: settings?.accessTokenExpiryMinutes ?? 15,
+    };
+  }
+
   async issueTokenPair(input: {
     userId: string;
     role: UserRole;
     userAgent?: string;
     ipAddress?: string;
   }) {
+    const { policy, maxSessions, refreshDays, accessMinutes } = await this.getSessionPolicy();
+
+    // Enforce session policy
+    if (policy === SessionPolicy.SINGLE_DEVICE) {
+      // Revoke ALL existing sessions for this user
+      await this.prisma.userSession.updateMany({
+        where: { userId: input.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    } else if (maxSessions > 0) {
+      // Multi-device with a cap: revoke oldest sessions beyond the limit
+      const activeSessions = await this.prisma.userSession.findMany({
+        where: { userId: input.userId, revokedAt: null, expiresAt: { gt: new Date() } },
+        orderBy: { lastUsedAt: 'desc' },
+        select: { id: true },
+      });
+      // We're about to create one more, so if current count >= max, revoke the oldest
+      if (activeSessions.length >= maxSessions) {
+        const toRevoke = activeSessions.slice(maxSessions - 1).map((s) => s.id);
+        if (toRevoke.length > 0) {
+          await this.prisma.userSession.updateMany({
+            where: { id: { in: toRevoke } },
+            data: { revokedAt: new Date() },
+          });
+        }
+      }
+    }
+
     const refreshRaw = randomBytes(48).toString('base64url');
-    const refreshDays = Number(this.config.get<string>('JWT_REFRESH_EXPIRES_DAYS') ?? '7');
     const expiresAt = new Date(Date.now() + refreshDays * 24 * 60 * 60 * 1000);
 
     await this.prisma.userSession.create({
@@ -40,6 +77,7 @@ export class SessionService {
 
     const accessToken = await this.jwt.signAsync(
       { sub: input.userId, role: input.role } satisfies JwtPayload,
+      { expiresIn: `${accessMinutes}m` },
     );
 
     return { accessToken, refreshToken: refreshRaw, refreshExpiresAt: expiresAt };

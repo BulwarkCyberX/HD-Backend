@@ -10,9 +10,19 @@ import type { OAuthProvider } from './oauth.types';
 import { TransactionalEmailService } from '../email/transactional-email.service';
 import { SessionService } from './session.service';
 
-const EMAIL_VERIFY_HOURS = 24;
+const EMAIL_VERIFY_HOURS = 24; // fallback if DB not available
 const PASSWORD_RESET_HOURS = 1;
 const RESEND_VERIFICATION_COOLDOWN_MS = 60_000;
+
+/** Convert value+unit to milliseconds */
+function codeValidityMs(value: number, unit: string): number {
+  switch (unit.toUpperCase()) {
+    case 'MINUTES': return value * 60 * 1000;
+    case 'HOURS': return value * 60 * 60 * 1000;
+    case 'DAYS': return value * 24 * 60 * 60 * 1000;
+    default: return value * 60 * 60 * 1000; // default hours
+  }
+}
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -38,6 +48,28 @@ export class AuthService {
     private readonly sessions: SessionService,
   ) {}
 
+  /** Get email verification code validity in ms from DB settings */
+  private async getEmailVerifyMs(): Promise<{ ms: number; displayHours: number }> {
+    try {
+      const s = await this.prisma.platformSettings.findUnique({ where: { id: 'singleton' } });
+      if (s) {
+        const ms = codeValidityMs(s.emailVerificationCodeValue, s.emailVerificationCodeUnit);
+        const displayHours = ms / (60 * 60 * 1000);
+        return { ms, displayHours };
+      }
+    } catch { /* fallback */ }
+    return { ms: EMAIL_VERIFY_HOURS * 60 * 60 * 1000, displayHours: EMAIL_VERIFY_HOURS };
+  }
+
+  /** Get login OTP code validity in ms from DB settings */
+  private async getLoginOtpMs(): Promise<number> {
+    try {
+      const s = await this.prisma.platformSettings.findUnique({ where: { id: 'singleton' } });
+      if (s) return codeValidityMs(s.loginOtpCodeValue, s.loginOtpCodeUnit);
+    } catch { /* fallback */ }
+    return Number(this.config.get<string>('LOGIN_CODE_TTL_MINUTES') ?? '10') * 60_000;
+  }
+
   async register(input: {
     email: string;
     password: string;
@@ -60,7 +92,8 @@ export class AuthService {
     const tokenHash = hashOpaqueToken(rawToken);
     const otp = generateNumericCode(6);
     const otpHash = await bcrypt.hash(otp, 12);
-    const expiresAt = new Date(Date.now() + EMAIL_VERIFY_HOURS * 60 * 60 * 1000);
+    const { ms: verifyMs, displayHours: verifyDisplayHours } = await this.getEmailVerifyMs();
+    const expiresAt = new Date(Date.now() + verifyMs);
     const sentAt = new Date();
     const user = await this.prisma.user.create({
       data: {
@@ -99,7 +132,7 @@ export class AuthService {
       firstName: user.firstName ?? 'there',
       verifyUrl,
       otp,
-      expiresHours: EMAIL_VERIFY_HOURS,
+      expiresHours: verifyDisplayHours,
     });
 
     return {
@@ -217,7 +250,8 @@ export class AuthService {
     const tokenHash = hashOpaqueToken(rawToken);
     const otp = generateNumericCode(6);
     const otpHash = await bcrypt.hash(otp, 12);
-    const expiresAt = new Date(Date.now() + EMAIL_VERIFY_HOURS * 60 * 60 * 1000);
+    const { ms: verifyMs2, displayHours: verifyDisplayHours2 } = await this.getEmailVerifyMs();
+    const expiresAt = new Date(Date.now() + verifyMs2);
 
     await this.prisma.user.update({
       where: { id: user.id },
@@ -237,7 +271,7 @@ export class AuthService {
       firstName: user.firstName ?? 'there',
       verifyUrl,
       otp,
-      expiresHours: EMAIL_VERIFY_HOURS,
+      expiresHours: verifyDisplayHours2,
     });
 
     return { ok: true as const };
@@ -332,8 +366,8 @@ export class AuthService {
     const code = generateNumericCode(6);
     const codeHash = await bcrypt.hash(code, 12);
 
-    const ttlMinutes = Number(this.config.get<string>('LOGIN_CODE_TTL_MINUTES') ?? '10');
-    const expiresAt = new Date(Date.now() + ttlMinutes * 60_000);
+    const otpMs = await this.getLoginOtpMs();
+    const expiresAt = new Date(Date.now() + otpMs);
 
     await this.prisma.loginCode.create({
       data: {
@@ -343,7 +377,7 @@ export class AuthService {
       },
     });
 
-    await this.transactional.sendLoginOtp({ to: email, code, ttlMinutes });
+    await this.transactional.sendLoginOtp({ to: email, code, ttlMinutes: Math.round(otpMs / 60_000) });
 
     return { ok: true };
   }

@@ -1140,3 +1140,44 @@ model WebhookDelivery {
   @@index([endpointId])
   @@index([createdAt])
 }
+
+// --- Platform Settings (admin-configurable) ---
+
+enum MailProvider {
+  AUTO
+  SMTP
+  SENDGRID
+  NONE
+}
+
+enum SessionPolicy {
+  MULTI_DEVICE
+  SINGLE_DEVICE
+}
+
+model PlatformSettings {
+  id        String   @id @default("singleton")
+  // --- Mail configuration ---
+  mailProvider         MailProvider @default(AUTO)
+  mailFromAddress      String      @default("")
+  mailFromName         String      @default("HD Team")
+  mailReplyTo          String      @default("")
+  smtpHost             String      @default("smtp.gmail.com")
+  smtpPort             Int         @default(587)
+  smtpUser             String      @default("")
+  smtpPassword         String      @default("")  // encrypted at rest in production
+  sendgridApiKey       String      @default("")
+  // --- Token expiry ---
+  accessTokenExpiryMinutes  Int    @default(15)
+  refreshTokenExpiryDays    Int    @default(7)
+  // --- Email code validity ---
+  emailVerificationCodeValue Int   @default(24)   // numeric value
+  emailVerificationCodeUnit  String @default("HOURS") // MINUTES | HOURS | DAYS
+  loginOtpCodeValue          Int   @default(10)   // numeric value
+  loginOtpCodeUnit           String @default("MINUTES") // MINUTES | HOURS | DAYS
+  // --- Session / multi-device policy ---
+  sessionPolicy        SessionPolicy @default(MULTI_DEVICE)
+  maxConcurrentSessions Int          @default(0)  // 0 = unlimited
+
+  updatedAt DateTime @updatedAt
+}

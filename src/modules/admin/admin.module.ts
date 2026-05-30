@@ -5,10 +5,12 @@ import { AnalyticsModule } from '../analytics/analytics.module';
 import { TrustModule } from '../trust/trust.module';
 import { AdminController } from './admin.controller';
 import { AdminProjectsService } from './admin-projects.service';
+import { PlatformSettingsService } from './platform-settings.service';
 
 @Module({
   imports: [EmailModule, BidsModule, AnalyticsModule, TrustModule],
   controllers: [AdminController],
-  providers: [AdminProjectsService],
+  providers: [AdminProjectsService, PlatformSettingsService],
+  exports: [PlatformSettingsService],
 })
 export class AdminModule {}

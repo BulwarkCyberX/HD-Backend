@@ -6,6 +6,7 @@ import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { EmailTemplateService } from '../email/email-template.service';
 import { AdminProjectsService } from './admin-projects.service';
+import { PlatformSettingsService } from './platform-settings.service';
 import { BidsService } from '../bids/bids.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { FraudService } from '../trust/fraud.service';
@@ -19,6 +20,7 @@ export class AdminController {
   constructor(
     private readonly emailTemplates: EmailTemplateService,
     private readonly adminProjects: AdminProjectsService,
+    private readonly platformSettings: PlatformSettingsService,
     private readonly bids: BidsService,
     private readonly analytics: AnalyticsService,
     private readonly fraud: FraudService,
@@ -123,5 +125,17 @@ export class AdminController {
   @Get('projects/:id/financials')
   projectFinancials(@Param('id') id: string) {
     return this.adminProjects.getFinancials(id);
+  }
+
+  // --- Platform Settings ---
+
+  @Get('settings')
+  getSettings() {
+    return this.platformSettings.get();
+  }
+
+  @Patch('settings')
+  updateSettings(@Body() body: Record<string, unknown>) {
+    return this.platformSettings.update(body as any);
   }
 }

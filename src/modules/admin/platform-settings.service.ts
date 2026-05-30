@@ -1,0 +1,144 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { MailProvider, SessionPolicy } from '@prisma/client';
+
+export type PlatformSettingsDto = {
+  mailProvider: MailProvider;
+  mailFromAddress: string;
+  mailFromName: string;
+  mailReplyTo: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassword: string;
+  sendgridApiKey: string;
+  accessTokenExpiryMinutes: number;
+  refreshTokenExpiryDays: number;
+  emailVerificationCodeValue: number;
+  emailVerificationCodeUnit: string;
+  loginOtpCodeValue: number;
+  loginOtpCodeUnit: string;
+  sessionPolicy: SessionPolicy;
+  maxConcurrentSessions: number;
+};
+
+@Injectable()
+export class PlatformSettingsService {
+  private readonly logger = new Logger(PlatformSettingsService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  async get(): Promise<PlatformSettingsDto> {
+    const row = await this.prisma.platformSettings.upsert({
+      where: { id: 'singleton' },
+      create: { id: 'singleton' },
+      update: {},
+    });
+    return {
+      mailProvider: row.mailProvider,
+      mailFromAddress: row.mailFromAddress,
+      mailFromName: row.mailFromName,
+      mailReplyTo: row.mailReplyTo,
+      smtpHost: row.smtpHost,
+      smtpPort: row.smtpPort,
+      smtpUser: row.smtpUser,
+      smtpPassword: row.smtpPassword ? '••••••••' : '',
+      sendgridApiKey: row.sendgridApiKey ? '••••••••' : '',
+      accessTokenExpiryMinutes: row.accessTokenExpiryMinutes,
+      refreshTokenExpiryDays: row.refreshTokenExpiryDays,
+      emailVerificationCodeValue: row.emailVerificationCodeValue,
+      emailVerificationCodeUnit: row.emailVerificationCodeUnit,
+      loginOtpCodeValue: row.loginOtpCodeValue,
+      loginOtpCodeUnit: row.loginOtpCodeUnit,
+      sessionPolicy: row.sessionPolicy,
+      maxConcurrentSessions: row.maxConcurrentSessions,
+    };
+  }
+
+  /** Returns raw settings (with secrets) for internal use by mail/session services */
+  async getRaw() {
+    return this.prisma.platformSettings.upsert({
+      where: { id: 'singleton' },
+      create: { id: 'singleton' },
+      update: {},
+    });
+  }
+
+  async update(data: Partial<Omit<PlatformSettingsDto, 'smtpPassword' | 'sendgridApiKey'>> & {
+    smtpPassword?: string;
+    sendgridApiKey?: string;
+  }) {
+    const updateData: Record<string, unknown> = {};
+
+    if (data.mailProvider !== undefined) updateData.mailProvider = data.mailProvider;
+    if (data.mailFromAddress !== undefined) updateData.mailFromAddress = data.mailFromAddress.trim();
+    if (data.mailFromName !== undefined) updateData.mailFromName = data.mailFromName.trim();
+    if (data.mailReplyTo !== undefined) updateData.mailReplyTo = data.mailReplyTo.trim();
+    if (data.smtpHost !== undefined) updateData.smtpHost = data.smtpHost.trim();
+    if (data.smtpPort !== undefined) updateData.smtpPort = Number(data.smtpPort);
+    if (data.smtpUser !== undefined) updateData.smtpUser = data.smtpUser.trim();
+    // Only update secrets if a real value is provided (not the masked placeholder)
+    if (data.smtpPassword && data.smtpPassword !== '••••••••') {
+      updateData.smtpPassword = data.smtpPassword;
+    }
+    if (data.sendgridApiKey && data.sendgridApiKey !== '••••••••') {
+      updateData.sendgridApiKey = data.sendgridApiKey;
+    }
+    if (data.accessTokenExpiryMinutes !== undefined) {
+      updateData.accessTokenExpiryMinutes = Math.max(1, Math.min(1440, Number(data.accessTokenExpiryMinutes)));
+    }
+    if (data.refreshTokenExpiryDays !== undefined) {
+      updateData.refreshTokenExpiryDays = Math.max(1, Math.min(90, Number(data.refreshTokenExpiryDays)));
+    }
+    if (data.emailVerificationCodeValue !== undefined) {
+      updateData.emailVerificationCodeValue = Math.max(1, Math.min(999, Number(data.emailVerificationCodeValue)));
+    }
+    if (data.emailVerificationCodeUnit !== undefined) {
+      const unit = String(data.emailVerificationCodeUnit).toUpperCase();
+      if (['MINUTES', 'HOURS', 'DAYS'].includes(unit)) {
+        updateData.emailVerificationCodeUnit = unit;
+      }
+    }
+    if (data.loginOtpCodeValue !== undefined) {
+      updateData.loginOtpCodeValue = Math.max(1, Math.min(999, Number(data.loginOtpCodeValue)));
+    }
+    if (data.loginOtpCodeUnit !== undefined) {
+      const unit = String(data.loginOtpCodeUnit).toUpperCase();
+      if (['MINUTES', 'HOURS', 'DAYS'].includes(unit)) {
+        updateData.loginOtpCodeUnit = unit;
+      }
+    }
+    if (data.sessionPolicy !== undefined) updateData.sessionPolicy = data.sessionPolicy;
+    if (data.maxConcurrentSessions !== undefined) {
+      updateData.maxConcurrentSessions = Math.max(0, Math.min(50, Number(data.maxConcurrentSessions)));
+    }
+
+    const row = await this.prisma.platformSettings.upsert({
+      where: { id: 'singleton' },
+      create: { id: 'singleton', ...updateData },
+      update: updateData,
+    });
+
+    this.logger.log('Platform settings updated');
+
+    return {
+      mailProvider: row.mailProvider,
+      mailFromAddress: row.mailFromAddress,
+      mailFromName: row.mailFromName,
+      mailReplyTo: row.mailReplyTo,
+      smtpHost: row.smtpHost,
+      smtpPort: row.smtpPort,
+      smtpUser: row.smtpUser,
+      smtpPassword: row.smtpPassword ? '••••••••' : '',
+      sendgridApiKey: row.sendgridApiKey ? '••••••••' : '',
+      accessTokenExpiryMinutes: row.accessTokenExpiryMinutes,
+      refreshTokenExpiryDays: row.refreshTokenExpiryDays,
+      emailVerificationCodeValue: row.emailVerificationCodeValue,
+      emailVerificationCodeUnit: row.emailVerificationCodeUnit,
+      loginOtpCodeValue: row.loginOtpCodeValue,
+      loginOtpCodeUnit: row.loginOtpCodeUnit,
+      sessionPolicy: row.sessionPolicy,
+      maxConcurrentSessions: row.maxConcurrentSessions,
+    };
+  }
+}
